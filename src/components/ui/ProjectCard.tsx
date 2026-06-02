@@ -1,0 +1,54 @@
+interface ProjectCardProps {
+  title: string;
+  description: string;
+  technologies: string[];
+  github: string;
+  demo: string;
+}
+
+export default function ProjectCard({
+  title,
+  description,
+  technologies,
+  github,
+  demo,
+}: ProjectCardProps) {
+  return (
+    <div className="group rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 transition-all duration-300 hover:border-cyan-400/30">
+      <h3 className="text-2xl font-semibold text-white">
+        {title}
+      </h3>
+
+      <p className="mt-4 leading-7 text-zinc-400">
+        {description}
+      </p>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        {technologies.map((tech) => (
+          <span
+            key={tech}
+            className="rounded-full bg-zinc-800 px-3 py-1 text-sm text-zinc-300"
+          >
+            {tech}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-6 flex gap-4">
+        <a
+          href={github}
+          className="font-medium text-cyan-400 hover:text-cyan-300"
+        >
+          GitHub →
+        </a>
+
+        <a
+          href={demo}
+          className="font-medium text-cyan-400 hover:text-cyan-300"
+        >
+          Live Demo →
+        </a>
+      </div>
+    </div>
+  );
+}

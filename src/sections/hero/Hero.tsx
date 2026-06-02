@@ -1,0 +1,53 @@
+export default function Hero() {
+  return (
+    <section className="flex min-h-[90vh] items-center">
+      <div className="mx-auto max-w-6xl px-6 py-20">
+        
+        <div className="mb-4 inline-flex items-center rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-400">
+          Available for Internships & Opportunities
+        </div>
+
+        <h1 className="max-w-4xl text-5xl font-extrabold leading-tight tracking-tight text-white md:text-7xl">
+          Hi, I'm{" "}
+          <span className="text-cyan-400">
+            Ritesh Jat
+          </span>
+        </h1>
+
+        <h2 className="mt-4 text-2xl font-semibold text-zinc-300 md:text-4xl">
+          Full Stack Developer • AI Enthusiast • ECE Undergraduate
+        </h2>
+
+        <p className="mt-8 max-w-3xl text-lg leading-8 text-zinc-400">
+          I'm an Electronics and Communication Engineering student at
+          MANIT Bhopal passionate about Full Stack Development,
+          Artificial Intelligence, Problem Solving, and building
+          impactful software products.
+        </p>
+
+        <div className="mt-10 flex flex-wrap gap-4">
+          <a
+            href="#projects"
+            className="rounded-xl bg-cyan-400 px-6 py-3 font-semibold text-black transition hover:bg-cyan-300"
+          >
+            View Projects
+          </a>
+
+          <a
+            href="/resume.pdf"
+            target="_blank"
+            className="rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-white transition hover:border-cyan-400 hover:text-cyan-400"
+          >
+            Download Resume
+          </a>
+        </div>
+
+        <div className="mt-12 flex flex-wrap gap-6 text-zinc-400">
+          <span>📍 Bhopal, India</span>
+          <span>🎓 MANIT Bhopal</span>
+          <span>💻 Full Stack & AI</span>
+        </div>
+      </div>
+    </section>
+  );
+}
