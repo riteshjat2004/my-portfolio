@@ -8,7 +8,7 @@ export default function SkillCard({
   skills,
 }: SkillCardProps) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 backdrop-blur-sm p-6">
       <h3 className="mb-4 text-xl font-semibold text-white">
         {title}
       </h3>

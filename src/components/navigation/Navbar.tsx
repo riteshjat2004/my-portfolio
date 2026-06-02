@@ -24,7 +24,7 @@ export default function Navbar() {
             <a
               key={link.label}
               href={link.href}
-              className="text-sm font-medium text-zinc-400 transition hover:text-white"
+              className="text-sm font-medium text-zinc-400 transition hover:text-white transition-all duration-300"
             >
               {link.label}
             </a>
@@ -33,7 +33,7 @@ export default function Navbar() {
           <a
             href="/resume.pdf"
             target="_blank"
-            className="rounded-lg border border-cyan-400 px-4 py-2 text-sm font-medium text-cyan-400 transition hover:bg-cyan-400 hover:text-black"
+            className="rounded-lg border border-cyan-400 px-4 py-2 text-sm font-medium text-cyan-400 transition hover:bg-cyan-400 hover:text-black transition-all duration-300"
           >
             Resume
           </a>

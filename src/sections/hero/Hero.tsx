@@ -7,18 +7,18 @@ export default function Hero() {
           Available for Internships & Opportunities
         </div>
 
-        <h1 className="max-w-4xl text-5xl font-extrabold leading-tight tracking-tight text-white md:text-7xl">
+        <h1 className="max-w-4xl text-6xl font-extrabold leading-tight tracking-tight text-white md:text-8xl">
           Hi, I'm{" "}
           <span className="text-cyan-400">
             Ritesh Jat
           </span>
         </h1>
 
-        <h2 className="mt-4 text-2xl font-semibold text-zinc-300 md:text-4xl">
+        <h2 className="mt-4 text-2xl font-semibold text-zinc-300 md:text-5xl">
           Full Stack Developer • AI Enthusiast • ECE Undergraduate
         </h2>
 
-        <p className="mt-8 max-w-3xl text-lg leading-8 text-zinc-400">
+        <p className="mt-8 max-w-2xl text-lg leading-8 text-zinc-400">
           I'm an Electronics and Communication Engineering student at
           MANIT Bhopal passionate about Full Stack Development,
           Artificial Intelligence, Problem Solving, and building
@@ -28,7 +28,7 @@ export default function Hero() {
         <div className="mt-10 flex flex-wrap gap-4">
           <a
             href="#projects"
-            className="rounded-xl bg-cyan-400 px-6 py-3 font-semibold text-black transition hover:bg-cyan-300"
+            className="rounded-xl bg-cyan-400 px-6 py-3 font-semibold text-black transition hover:bg-cyan-300 hover:scale-105"
           >
             View Projects
           </a>
@@ -36,7 +36,7 @@ export default function Hero() {
           <a
             href="/resume.pdf"
             target="_blank"
-            className="rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-white transition hover:border-cyan-400 hover:text-cyan-400"
+            className="rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-white transition hover:border-cyan-400 hover:text-cyan-400 hover:scale-105"
           >
             Download Resume
           </a>

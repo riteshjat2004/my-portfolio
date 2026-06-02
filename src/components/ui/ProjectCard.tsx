@@ -14,7 +14,7 @@ export default function ProjectCard({
   demo,
 }: ProjectCardProps) {
   return (
-    <div className="group rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 transition-all duration-300 hover:border-cyan-400/30">
+    <div className="group rounded-2xl border border-zinc-800 bg-zinc-900/50 backdrop-blur-sm p-6 transition-all duration-300 hover:border-cyan-400/40 hover:-translate-y-1 hover:shadow-lg hover:shadow-cyan-400/10">
       <h3 className="text-2xl font-semibold text-white">
         {title}
       </h3>
