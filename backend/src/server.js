@@ -13,6 +13,10 @@ import authRoutes from "./routes/auth.routes.js";
 
 import adminRoutes from "./routes/admin.routes.js";
 
+import projectRoutes from "./routes/project.routes.js";
+
+import blogRoutes from "./routes/blog.routes.js";
+
 dotenv.config();
 connectDB();
 
@@ -31,6 +35,11 @@ app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 
 app.use("/api/admin", adminRoutes);
+
+app.use("/api/projects", projectRoutes);
+
+
+app.use("/api/blogs", blogRoutes);
 
 const PORT = process.env.PORT || 5000;
 
