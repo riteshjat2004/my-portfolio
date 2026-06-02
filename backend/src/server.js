@@ -5,7 +5,13 @@ import healthRoutes from "./routes/health.routes.js";
 
 import profileRoutes from "./routes/profile.routes.js";
 
+import contactRoutes from "./routes/contact.routes.js";
+
 import connectDB from "./config/db.js";
+
+import authRoutes from "./routes/auth.routes.js";
+
+import adminRoutes from "./routes/admin.routes.js";
 
 dotenv.config();
 connectDB();
@@ -16,9 +22,15 @@ app.use(express.json());
 
 app.use(cors());
 
+app.use("/api/contact", contactRoutes);
+
 app.use("/api/profile", profileRoutes);
 
 app.use("/api/health", healthRoutes);
+
+app.use("/api/auth", authRoutes);
+
+app.use("/api/admin", adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 

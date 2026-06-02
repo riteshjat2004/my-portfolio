@@ -9,21 +9,21 @@ export default function Footer() {
 
           <div className="flex gap-6">
             <a
-              href="https://github.com/Rishi-364"
+              href="https://github.com/riteshjat2004"
               className="text-zinc-400 hover:text-cyan-400"
             >
               GitHub
             </a>
 
             <a
-              href="https://linkedin.com"
+              href="https://www.linkedin.com/in/ritesh-jat-634837291"
               className="text-zinc-400 hover:text-cyan-400"
             >
               LinkedIn
             </a>
 
             <a
-              href="mailto:link4ritesh@gmail.com"
+              href="mailto:link4riteshjat@gmail.com"
               className="text-zinc-400 hover:text-cyan-400"
             >
               Email
