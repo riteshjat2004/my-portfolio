@@ -26,10 +26,11 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      // "https://your-vercel-domain.vercel.app",
-    ],
+    origin : true,
+    // origin: [
+    //   "http://localhost:3000",
+    //   "https://your-vercel-domain.vercel.app",
+    // ],
     credentials: true,
   })
 );
