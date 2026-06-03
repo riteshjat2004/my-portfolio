@@ -10,6 +10,8 @@ import Experience from "@/sections/experience/Experience";
 import Contact from "@/sections/contact/Contact";
 import Footer from "@/sections/footer/Footer";
 
+import Blogs from "@/sections/blogs/Blogs";
+
 export default function Home() {
   return (
     <main className="w-full min-h-screen bg-black text-white">
@@ -18,6 +20,7 @@ export default function Home() {
       <About />
       <Skills />
       <Projects />
+      <Blogs />
       <Experience />
       <Contact />
       <Footer />
