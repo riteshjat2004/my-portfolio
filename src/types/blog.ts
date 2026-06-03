@@ -7,5 +7,4 @@ export interface Blog {
   tags: string[];
   coverImage: string;
   published: boolean;
-  createdAt: string;
 }

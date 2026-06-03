@@ -8,6 +8,14 @@ export default function Footer() {
           </p>
 
           <div className="flex gap-6">
+        
+            <a
+              href="/admin/login"
+              className="text-zinc-400 hover:text-cyan-400"
+            >
+              Admin
+            </a>
+            
             <a
               href="https://github.com/riteshjat2004"
               className="text-zinc-400 hover:text-cyan-400"
