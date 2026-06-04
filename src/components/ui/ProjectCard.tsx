@@ -37,6 +37,8 @@ export default function ProjectCard({
       <div className="mt-6 flex gap-4">
         <a
           href={github}
+          target="_blank"
+          rel="noopener noreferrer"
           className="font-medium text-cyan-400 hover:text-cyan-300"
         >
           GitHub →
@@ -44,6 +46,8 @@ export default function ProjectCard({
 
         <a
           href={demo}
+          target="_blank"
+          rel="noopener noreferrer"
           className="font-medium text-cyan-400 hover:text-cyan-300"
         >
           Live Demo →

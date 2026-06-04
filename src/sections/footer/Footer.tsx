@@ -19,6 +19,8 @@ export default function Footer() {
             <a
               href="https://github.com/riteshjat2004"
               className="text-zinc-400 hover:text-cyan-400"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               GitHub
             </a>
@@ -26,12 +28,16 @@ export default function Footer() {
             <a
               href="https://www.linkedin.com/in/ritesh-jat-634837291"
               className="text-zinc-400 hover:text-cyan-400"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               LinkedIn
             </a>
 
             <a
               href="mailto:link4riteshjat@gmail.com"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-zinc-400 hover:text-cyan-400"
             >
               Email
