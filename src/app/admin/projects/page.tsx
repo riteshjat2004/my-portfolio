@@ -19,6 +19,9 @@ export default function AdminProjects() {
   const [projects, setProjects] =
     useState<any[]>([]);
 
+  const [loading, setLoading] =
+    useState(true);
+
   const [title, setTitle] =
     useState("");
 
@@ -40,11 +43,23 @@ export default function AdminProjects() {
   const [editingId, setEditingId] =
     useState<string | null>(null);
 
-  const fetchProjects = async () => {
-    const data =
-      await getAdminProjects();
+  const [deleteConfirm, setDeleteConfirm] =
+    useState<string | null>(null);
 
-    setProjects(data);
+  const [deleting, setDeleting] =
+    useState(false);
+
+  const fetchProjects = async () => {
+    try {
+      const data =
+        await getAdminProjects();
+
+      setProjects(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -54,9 +69,21 @@ export default function AdminProjects() {
   const handleDelete = async (
     id: string
   ) => {
-    await deleteProject(id);
+    setDeleting(true);
+    try {
+      await deleteProject(id);
 
-    fetchProjects();
+      setProjects((prev) =>
+        prev.filter(
+          (project) => project._id !== id
+        )
+      );
+      setDeleteConfirm(null);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleEdit = (
@@ -125,6 +152,14 @@ export default function AdminProjects() {
     fetchProjects();
   };
 
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-black p-10 text-white">
+        <p>Loading projects...</p>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-black p-10 text-white">
       <h1 className="mb-10 text-4xl font-bold">
@@ -148,7 +183,7 @@ export default function AdminProjects() {
           onChange={(e) =>
             setTitle(e.target.value)
           }
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-white"
         />
 
         <textarea
@@ -159,7 +194,7 @@ export default function AdminProjects() {
               e.target.value
             )
           }
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-white"
         />
 
         <input
@@ -171,7 +206,7 @@ export default function AdminProjects() {
               e.target.value
             )
           }
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-white"
         />
 
         <input
@@ -183,7 +218,7 @@ export default function AdminProjects() {
               e.target.value
             )
           }
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-white"
         />
 
         <input
@@ -195,7 +230,7 @@ export default function AdminProjects() {
               e.target.value
             )
           }
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-white"
         />
 
         <label className="flex items-center gap-3">
@@ -222,50 +257,92 @@ export default function AdminProjects() {
         </button>
       </form>
 
-      <div className="space-y-4">
-        {projects.map(
-          (project) => (
-            <div
-              key={project._id}
-              className="flex items-center justify-between rounded-xl border border-zinc-800 p-5"
-            >
-              <div>
-                <h2 className="font-semibold">
-                  {project.title}
-                </h2>
-
-                <p className="text-zinc-400">
-                  {project.description}
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() =>
-                    handleEdit(
-                      project
-                    )
-                  }
-                  className="rounded-lg bg-cyan-500 px-4 py-2"
-                >
-                  Edit
-                </button>
-
-                <button
-                  onClick={() =>
-                    handleDelete(
-                      project._id
-                    )
-                  }
-                  className="rounded-lg bg-red-500 px-4 py-2"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          )
-        )}
+      {/* Statistics Card */}
+      <div className="mb-10 rounded-2xl border border-zinc-800 p-6">
+        <h2 className="text-2xl font-bold mb-2">
+          Total Projects
+        </h2>
+        <p className="text-4xl font-bold text-cyan-400">
+          {projects.length}
+        </p>
       </div>
+
+      {projects.length === 0 ? (
+        <p>No projects found.</p>
+      ) : (
+        <div className="space-y-4">
+          {projects.map(
+            (project) => (
+              <div
+                key={project._id}
+                className="flex items-center justify-between rounded-xl border border-zinc-800 p-5"
+              >
+                <div>
+                  <h2 className="font-semibold">
+                    {project.title}
+                  </h2>
+
+                  <p className="text-zinc-400">
+                    {project.description}
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() =>
+                      handleEdit(
+                        project
+                      )
+                    }
+                    className="rounded-lg bg-cyan-500 px-4 py-2 font-medium"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      setDeleteConfirm(
+                        project._id
+                      )
+                    }
+                    className="rounded-lg bg-red-500 px-4 py-2 font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )
+          )}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="rounded-2xl border border-zinc-800 p-6 max-w-sm w-full bg-black">
+            <h2 className="text-2xl font-bold mb-2">Delete Project</h2>
+            <p className="text-zinc-400 mb-6">
+              Are you sure you want to delete this project? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                className="flex-1 rounded-lg border border-zinc-800 px-4 py-2 font-medium transition hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
+                disabled={deleting}
+                className="flex-1 rounded-lg bg-red-500 px-4 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

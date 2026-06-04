@@ -15,3 +15,36 @@ export const getBlogBySlug = async (
 
   return response.data;
 };
+
+export const createBlog = async (
+  data: Omit<Blog, "_id">
+) => {
+  const response = await api.post(
+    "/blogs",
+    data
+  );
+
+  return response.data;
+};
+
+export const updateBlog = async (
+  id: string,
+  data: Omit<Blog, "_id">
+) => {
+  const response = await api.put(
+    `/blogs/${id}`,
+    data
+  );
+
+  return response.data;
+};
+
+export const deleteBlog = async (
+  id: string
+) => {
+  const response = await api.delete(
+    `/blogs/${id}`
+  );
+
+  return response.data;
+};

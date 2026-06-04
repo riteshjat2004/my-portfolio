@@ -12,6 +12,8 @@ export default function Footer() {
             <a
               href="/admin/login"
               className="text-zinc-400 hover:text-cyan-400"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Admin
             </a>
