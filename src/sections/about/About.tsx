@@ -35,7 +35,7 @@ export default function About() {
             <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-2xl border border-zinc-800 p-6">
                 <h3 className="text-3xl font-bold text-cyan-400">
-                250+
+                450+
                 </h3>
                 <p className="mt-2 text-zinc-400">
                 DSA Problems Solved
