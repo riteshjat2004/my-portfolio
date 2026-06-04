@@ -1,8 +1,8 @@
 import api from "./axios";
-import { Contact } from "@/types/contact";
+import { Contact, ContactFormData } from "@/types/contact";
 
 export const sendContactMessage = async (
-  data: Contact
+  data: ContactFormData
 ) => {
   const response = await api.post(
     "/contact",
