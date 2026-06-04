@@ -12,7 +12,10 @@ import {
   updateProject,
 } from "@/api/adminProjectApi";
 
+import { useProtectedRoute } from "@/hooks/useProtectedRoute";
+
 export default function AdminProjects() {
+  useProtectedRoute();
   const [projects, setProjects] =
     useState<any[]>([]);
 
