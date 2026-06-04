@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const navLinks = [
@@ -11,6 +12,14 @@ const navLinks = [
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const pathname = usePathname();
+
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   const handleLinkClick = () => {
     setIsMenuOpen(false);
@@ -21,9 +30,10 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link
           href="/"
+          onClick={handleLogoClick}
           className="text-xl font-bold tracking-tight text-white"
         >
-        <span className="text-cyan-400">Portfolio</span>
+        <span className="text-cyan-400">Ritesh</span>
         </Link>
 
         {/* Desktop Navigation */}

@@ -9,7 +9,7 @@ import { Contact } from "@/types/contact";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 
 export default function ContactPage() {
-  useProtectedRoute();
+  const isAuthenticated = useProtectedRoute();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -46,6 +46,11 @@ export default function ContactPage() {
     }
   };
 
+  // Prevent render until auth is confirmed
+  if (!isAuthenticated) {
+    return null;
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-black p-10 text-white">
@@ -67,7 +72,7 @@ export default function ContactPage() {
           {contacts.map((contact) => (
             <div
               key={contact._id}
-              className="flex items-center justify-between rounded-xl border border-zinc-800 p-5"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border border-zinc-800 p-5 gap-4"
             >
               <div>
                 <h2 className="font-semibold">
@@ -89,17 +94,17 @@ export default function ContactPage() {
                 </p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-shrink-0 w-full sm:w-auto">
                 <button
                   onClick={() => setSelectedContact(contact)}
-                  className="rounded-lg bg-cyan-500 px-4 py-2"
+                  className="rounded-lg bg-cyan-500 px-4 py-2 flex-1 sm:flex-none"
                 >
                   View
                 </button>
 
                 <button
                   onClick={() => setDeleteConfirm(contact._id)}
-                  className="rounded-lg bg-red-500 px-4 py-2"
+                  className="rounded-lg bg-red-500 px-4 py-2 flex-1 sm:flex-none"
                 >
                   Delete
                 </button>

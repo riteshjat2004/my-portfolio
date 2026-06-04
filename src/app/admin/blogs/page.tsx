@@ -11,7 +11,7 @@ import { Blog } from "@/types/blog";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 
 export default function AdminBlogs() {
-  useProtectedRoute();
+  const isAuthenticated = useProtectedRoute();
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
@@ -115,6 +115,11 @@ export default function AdminBlogs() {
       setDeleting(false);
     }
   };
+
+  // Prevent render until auth is confirmed
+  if (!isAuthenticated) {
+    return null;
+  }
 
   if (loading) {
     return (
@@ -246,9 +251,9 @@ export default function AdminBlogs() {
           {blogs.map((blog) => (
             <div
               key={blog._id}
-              className="flex items-center justify-between rounded-xl border border-zinc-800 p-5"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border border-zinc-800 p-5 gap-4"
             >
-              <div className="flex items-start gap-4 flex-1">
+              <div className="flex items-start gap-4 flex-1 min-w-0">
                 {/* Cover Image Thumbnail */}
                 {blog.coverImage && (
                   <img
@@ -259,8 +264,8 @@ export default function AdminBlogs() {
                 )}
 
                 {/* Blog Info */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
                     <h2 className="font-semibold">
                       {blog.title}
                     </h2>
@@ -300,22 +305,22 @@ export default function AdminBlogs() {
                 </div>
               </div>
 
-              <div className="flex gap-3 flex-shrink-0">
+              <div className="flex gap-3 flex-shrink-0 w-full sm:w-auto">
                 <button
                   onClick={() => setSelectedBlog(blog)}
-                  className="rounded-lg bg-cyan-500 px-4 py-2"
+                  className="rounded-lg bg-cyan-500 px-4 py-2 flex-1 sm:flex-none"
                 >
                   View
                 </button>
                 <button
                   onClick={() => handleEdit(blog)}
-                  className="rounded-lg bg-cyan-500 px-4 py-2"
+                  className="rounded-lg bg-cyan-500 px-4 py-2 flex-1 sm:flex-none"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => setDeleteConfirm(blog._id)}
-                  className="rounded-lg bg-red-500 px-4 py-2"
+                  className="rounded-lg bg-red-500 px-4 py-2 flex-1 sm:flex-none"
                 >
                   Delete
                 </button>

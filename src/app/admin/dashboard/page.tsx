@@ -5,8 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function Dashboard() {
-  useProtectedRoute();
+  const isAuthenticated = useProtectedRoute();
   const router = useRouter();
+
+  // Prevent render until auth is confirmed
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-black p-10 text-white">

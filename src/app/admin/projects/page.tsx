@@ -15,7 +15,7 @@ import {
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 
 export default function AdminProjects() {
-  useProtectedRoute();
+  const isAuthenticated = useProtectedRoute();
   const [projects, setProjects] =
     useState<any[]>([]);
 
@@ -152,6 +152,11 @@ export default function AdminProjects() {
     fetchProjects();
   };
 
+  // Prevent render until auth is confirmed
+  if (!isAuthenticated) {
+    return null;
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-black p-10 text-white">
@@ -275,7 +280,7 @@ export default function AdminProjects() {
             (project) => (
               <div
                 key={project._id}
-                className="flex items-center justify-between rounded-xl border border-zinc-800 p-5"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border border-zinc-800 p-5 gap-4"
               >
                 <div>
                   <h2 className="font-semibold">
@@ -287,7 +292,7 @@ export default function AdminProjects() {
                   </p>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-shrink-0">
                   <button
                     onClick={() =>
                       handleEdit(
