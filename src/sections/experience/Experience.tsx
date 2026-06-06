@@ -2,6 +2,13 @@ import SectionTitle from "@/components/ui/SectionTitle";
 import FadeIn from "@/components/ui/FadeIn";
 
 const experiences = [
+   {
+    year: "2026",
+    role: "Machine Learning with AI Intern",
+    organization: "Internshala Trainings",
+    description:
+        "Worked on machine learning fundamentals, data preprocessing, model development, and AI-driven problem-solving through hands-on projects in a remote learning environment.",
+  },
   {
     year: "2025",
     role: "Student Mentor",
