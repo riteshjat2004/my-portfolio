@@ -4,6 +4,7 @@ import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+
 export default function Dashboard() {
   const isAuthenticated = useProtectedRoute();
   const router = useRouter();
@@ -74,6 +75,18 @@ export default function Dashboard() {
 
           <p className="mt-2 text-zinc-400">
             View contact messages
+          </p>
+        </Link>
+        <Link
+          href="/admin/analytics"
+          className="rounded-2xl border border-zinc-800 p-6 transition hover:border-cyan-400"
+        >
+          <h2 className="text-2xl font-bold">
+            Analytics
+          </h2>
+
+          <p className="mt-2 text-zinc-400">
+            Track visitors and engagement
           </p>
         </Link>
       </div>
