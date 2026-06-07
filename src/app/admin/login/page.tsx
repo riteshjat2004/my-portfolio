@@ -44,12 +44,14 @@ export default function LoginPage() {
         "/admin/dashboard"
       );
 
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+        console.error(error);
 
-      setError(
-        "Invalid credentials"
-      );
+        setError(
+          error?.response?.data?.message ||
+          "Login failed"
+        );
+      
     } finally {
       setLoading(false);
     }

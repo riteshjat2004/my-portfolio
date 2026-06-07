@@ -1,4 +1,5 @@
 import express from "express";
+import { loginLimiter } from "../middleware/rateLimit.middleware.js";
 
 import {
   register,
@@ -9,6 +10,6 @@ const router = express.Router();
 
 router.post("/register", register);
 
-router.post("/login", login);
+router.post("/login",loginLimiter, login);
 
 export default router;
