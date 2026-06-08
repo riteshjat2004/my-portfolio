@@ -1,4 +1,9 @@
+"use client";
+
+import { trackProjectClick } from "@/api/analyticsApi";
+
 interface ProjectCardProps {
+  projectId: string;
   title: string;
   description: string;
   technologies: string[];
@@ -7,12 +12,17 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({
+  projectId,
   title,
   description,
   technologies,
   github,
   demo,
 }: ProjectCardProps) {
+  const handleClick = (type: string) => {
+    trackProjectClick(projectId);
+  };
+
   return (
     <div className="group rounded-2xl border border-zinc-800 bg-zinc-900/50 backdrop-blur-sm p-6 transition-all duration-300 hover:border-cyan-400/40 hover:-translate-y-1 hover:shadow-lg hover:shadow-cyan-400/10">
       <h3 className="text-2xl font-semibold text-white">
@@ -39,6 +49,7 @@ export default function ProjectCard({
           href={github}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => handleClick("github")}
           className="font-medium text-cyan-400 hover:text-cyan-300"
         >
           GitHub →
@@ -48,6 +59,7 @@ export default function ProjectCard({
           href={demo}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => handleClick("demo")}
           className="font-medium text-cyan-400 hover:text-cyan-300"
         >
           Live Demo →

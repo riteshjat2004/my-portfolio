@@ -17,6 +17,8 @@ import projectRoutes from "./routes/project.routes.js";
 
 import blogRoutes from "./routes/blog.routes.js";
 
+import analyticsRoutes from "./routes/analytics.routes.js";
+
 dotenv.config();
 connectDB();
 
@@ -35,6 +37,10 @@ app.use(
     ],
     credentials: true,
   })
+);
+app.use(
+  "/api/analytics",
+  analyticsRoutes
 );
 
 app.use("/api/contact", contactRoutes);
