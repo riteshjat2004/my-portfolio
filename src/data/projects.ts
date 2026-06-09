@@ -1,3 +1,6 @@
+//This file contains the data for the projects section of the portfolio. Each project has a title, description, technologies used, and links to GitHub and demo.But this method is static and not dynamic. I will implement a backend API to fetch the projects data from a database in the future.so this file willbe useless for cuurently but I will keep it for future reference.
+
+
 export const projects = [
   {
     title: "AI Teaching Assistant",

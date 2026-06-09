@@ -4,7 +4,16 @@ import jwt from "jsonwebtoken";
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, adminSecret } = req.body;
+
+    if (
+      adminSecret !== process.env.ADMIN_SECRET
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid admin secret",
+      });
+    }
 
     if (!name || !email || !password) {
       return res.status(400).json({
