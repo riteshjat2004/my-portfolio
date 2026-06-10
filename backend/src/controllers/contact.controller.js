@@ -1,4 +1,5 @@
 import Contact from "../models/contact.model.js";
+import { saveToTrash } from "../utils/trash.js";
 
 export const createContact = async (req, res) => {
   try {
@@ -39,8 +40,9 @@ export const deleteContact = async (
   res
 ) => {
   try {
+
     const contact =
-      await Contact.findByIdAndDelete(
+      await Contact.findById(
         req.params.id
       );
 
@@ -50,6 +52,17 @@ export const deleteContact = async (
         message: "Contact not found",
       });
     }
+
+    await saveToTrash(
+      "contact",
+      "delete",
+      contact._id,
+      contact.toObject()
+    );
+
+    await Contact.findByIdAndDelete(
+      req.params.id
+    );
 
     res.status(200).json({
       success: true,

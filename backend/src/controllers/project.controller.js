@@ -1,4 +1,5 @@
 import Project from "../models/Project.model.js";
+import { saveToTrash } from "../utils/trash.js";
 
 export const getProjects = async (req, res) => {
   try {
@@ -28,7 +29,18 @@ export const createProject = async (req, res) => {
 
 export const updateProject = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
+      });
+    }
+
+    // Save original document to trash before updating
+    await saveToTrash("project", "edit", project._id, project.toObject());
+
+    const updatedProject = await Project.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
@@ -37,13 +49,7 @@ export const updateProject = async (req, res) => {
       }
     );
 
-    if (!project) {
-      return res.status(404).json({
-        message: "Project not found",
-      });
-    }
-
-    res.status(200).json(project);
+    res.status(200).json(updatedProject);
 
   } catch (error) {
     res.status(500).json({
@@ -54,17 +60,18 @@ export const updateProject = async (req, res) => {
 
 export const deleteProject = async (req, res) => {
   try {
-
-    const project =
-      await Project.findByIdAndDelete(
-        req.params.id
-      );
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({
         message: "Project not found",
       });
     }
+
+    // Save original document to trash before deleting
+    await saveToTrash("project", "delete", project._id, project.toObject());
+
+    await Project.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       message: "Project deleted",

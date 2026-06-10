@@ -98,12 +98,18 @@ export const login = async (req, res) => {
       }
     );
 
-    res.cookie("ownerToken", process.env.OWNER_SECRET, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    // Only set ownerToken for the portfolio owner
+    if (user.email === process.env.OWNER_EMAIL) {
+      res.cookie("ownerToken", process.env.OWNER_SECRET, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+    } else {
+      // Clear any existing ownerToken for non-owner accounts
+      res.clearCookie("ownerToken");
+    }
 
     res.status(200).json({
       success: true,
