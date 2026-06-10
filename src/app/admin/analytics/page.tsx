@@ -7,11 +7,13 @@ import {
   getTopPages,
   getTopProjects,
 } from "@/api/analyticsApi";
+import { getProjects } from "@/api/projectApi";
 import {
   AnalyticsStats,
   PageView,
   ProjectClick,
 } from "@/types/analytics";
+import { Project } from "@/types/project";
 import {
   LineChart,
   Line,
@@ -31,6 +33,9 @@ export default function AnalyticsPage() {
   const [topProjects, setTopProjects] = useState<
     ProjectClick[]
   >([]);
+  const [projects, setProjects] = useState<
+    Project[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,6 +52,10 @@ export default function AnalyticsPage() {
         const projectsData =
           await getTopProjects();
         setTopProjects(projectsData);
+
+        const projectsListData =
+          await getProjects();
+        setProjects(projectsListData);
       } catch (error) {
         console.error(
           "Failed to fetch analytics:",
@@ -59,6 +68,14 @@ export default function AnalyticsPage() {
 
     fetchData();
   }, []);
+
+  // Helper function to get project name by ID
+  const getProjectName = (projectId: string): string => {
+    const project = projects.find(
+      (p) => p._id === projectId
+    );
+    return project?.title || projectId;
+  };
 
   // Prevent render until auth is confirmed
   if (!isAuthenticated) {
@@ -265,14 +282,10 @@ export default function AnalyticsPage() {
             {topProjectsData.map((project, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between"
+                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
               >
-                <span className="text-sm text-zinc-300 font-mono">
-                  {project.projectId.substring(
-                    0,
-                    12
-                  )}
-                  ...
+                <span className="text-sm text-zinc-300 break-words">
+                  {getProjectName(project.projectId)}
                 </span>
 
                 <div className="flex items-center gap-3">

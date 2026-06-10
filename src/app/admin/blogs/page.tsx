@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getBlogs,
   createBlog,
@@ -12,6 +12,7 @@ import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 
 export default function AdminBlogs() {
   const isAuthenticated = useProtectedRoute();
+  const formRef = useRef<HTMLFormElement>(null);
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
@@ -53,6 +54,10 @@ export default function AdminBlogs() {
     setTags(blog.tags.join(", "));
     setCoverImage(blog.coverImage);
     setPublished(blog.published);
+
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
   };
 
   const handleNewBlog = () => {
@@ -146,6 +151,7 @@ export default function AdminBlogs() {
       {/* Create/Edit Form */}
       {(isCreating || editingId) && (
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
           className="mb-10 space-y-4 rounded-2xl border border-zinc-800 p-6"
         >

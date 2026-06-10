@@ -98,6 +98,13 @@ export const login = async (req, res) => {
       }
     );
 
+    res.cookie("ownerToken", process.env.OWNER_SECRET, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
       success: true,
       token,
@@ -108,6 +115,20 @@ export const login = async (req, res) => {
       },
     });
 
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("ownerToken");
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
   } catch (error) {
     res.status(500).json({
       message: error.message,

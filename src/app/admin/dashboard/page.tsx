@@ -3,6 +3,7 @@
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { logoutUser } from "@/api/authApi";
 
 
 export default function Dashboard() {
@@ -13,6 +14,17 @@ export default function Dashboard() {
   if (!isAuthenticated) {
     return null;
   }
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      console.error("Logout API call failed:", error);
+    } finally {
+      localStorage.removeItem("token");
+      router.push("/admin/login");
+    }
+  };
 
   return (
     <main className="min-h-screen bg-black p-10 text-white">
@@ -28,10 +40,7 @@ export default function Dashboard() {
         </div>
 
         <button
-          onClick={() => {
-            localStorage.removeItem("token");
-            router.push("/admin/login");
-          }}
+          onClick={handleLogout}
           className="rounded-xl bg-red-500 px-5 py-3"
         >
           Logout

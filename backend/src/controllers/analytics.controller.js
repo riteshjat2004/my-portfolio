@@ -24,6 +24,13 @@ export const getStats = async (req, res) => {
 
 export const trackVisitor = async (req, res) => {
   try {
+    // Skip tracking if owner cookie is valid
+    if (req.cookies.ownerToken === process.env.OWNER_SECRET) {
+      return res.json({
+        success: true,
+      });
+    }
+
     const { visitorId, page } = req.body;
 
     if (!visitorId) {
@@ -84,6 +91,13 @@ export const trackVisitor = async (req, res) => {
 
 export const trackResumeDownload = async (req, res) => {
   try {
+    // Skip tracking if owner cookie is valid
+    if (req.cookies.ownerToken === process.env.OWNER_SECRET) {
+      return res.json({
+        success: true,
+      });
+    }
+
     let stats = await Analytics.findOne();
 
     if (!stats) {
@@ -106,6 +120,13 @@ export const trackResumeDownload = async (req, res) => {
 
 export const trackProjectClick = async (req, res) => {
   try {
+    // Skip tracking if owner cookie is valid
+    if (req.cookies.ownerToken === process.env.OWNER_SECRET) {
+      return res.json({
+        success: true,
+      });
+    }
+
     const { projectId } = req.body;
 
     if (!projectId) {

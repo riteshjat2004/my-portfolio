@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -16,6 +17,7 @@ import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 
 export default function AdminProjects() {
   const isAuthenticated = useProtectedRoute();
+  const formRef = useRef<HTMLFormElement>(null);
   const [projects, setProjects] =
     useState<any[]>([]);
 
@@ -108,6 +110,10 @@ export default function AdminProjects() {
     setFeatured(
       project.featured
     );
+
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
   };
 
   const handleSubmit = async (
@@ -172,6 +178,7 @@ export default function AdminProjects() {
       </h1>
 
       <form
+        ref={formRef}
         onSubmit={handleSubmit}
         className="mb-10 space-y-4 rounded-2xl border border-zinc-800 p-6"
       >
@@ -252,14 +259,31 @@ export default function AdminProjects() {
           Featured Project
         </label>
 
-        <button
-          type="submit"
-          className="rounded-xl bg-cyan-400 px-5 py-3 font-medium text-black"
-        >
-          {editingId
-            ? "Update Project"
-            : "Create Project"}
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            className="rounded-xl bg-cyan-400 px-5 py-3 font-medium text-black"
+          >
+            {editingId
+              ? "Update Project"
+              : "Create Project"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingId(null);
+              setTitle("");
+              setDescription("");
+              setTechnologies("");
+              setGithub("");
+              setDemo("");
+              setFeatured(false);
+            }}
+            className="rounded-xl border border-zinc-700 px-5 py-3 font-medium text-zinc-400 hover:bg-zinc-800"
+          >
+            Cancel
+          </button>
+        </div>
       </form>
 
       {/* Statistics Card */}

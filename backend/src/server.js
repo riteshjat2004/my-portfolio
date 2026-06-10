@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import healthRoutes from "./routes/health.routes.js";
 
@@ -38,6 +39,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(cookieParser());
 app.use(
   "/api/analytics",
   analyticsRoutes
