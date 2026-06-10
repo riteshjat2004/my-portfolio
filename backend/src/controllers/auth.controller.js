@@ -108,7 +108,12 @@ export const login = async (req, res) => {
       });
     } else {
       // Clear any existing ownerToken for non-owner accounts
-      res.clearCookie("ownerToken");
+      // MUST use matching options for clearCookie to work properly
+      res.clearCookie("ownerToken", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+      });
     }
 
     res.status(200).json({
@@ -130,7 +135,12 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("ownerToken");
+    // MUST use matching options for clearCookie to work properly
+    res.clearCookie("ownerToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
     res.status(200).json({
       success: true,
       message: "Logged out successfully",
