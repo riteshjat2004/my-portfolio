@@ -102,8 +102,8 @@ export const login = async (req, res) => {
     if (user.email === process.env.OWNER_EMAIL) {
       res.cookie("ownerToken", process.env.OWNER_SECRET, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: true,
+        sameSite: "none",
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
     } else {
