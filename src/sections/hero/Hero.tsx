@@ -42,7 +42,7 @@ export default function Hero() {
           </a>
 
           <a
-            href="https://drive.google.com/file/d/1RmMlSXtGqk0s_NqU3li6rQqPLJ-Oe8S2/view?usp=sharing"
+            href="https://drive.google.com/file/d/1QGlbPBEyRpVtGssJ2zBYbEqEs3d4kcy1/view?usp=sharing"
             target="_blank"
             onClick={handleResumeClick}
             className="rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-white transition hover:border-cyan-400 hover:text-cyan-400 hover:scale-105"

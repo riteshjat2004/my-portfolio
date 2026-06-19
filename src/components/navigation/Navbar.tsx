@@ -49,7 +49,7 @@ export default function Navbar() {
           ))}
 
           <a
-            href="https://drive.google.com/file/d/1RmMlSXtGqk0s_NqU3li6rQqPLJ-Oe8S2/view?usp=sharing"
+            href="https://drive.google.com/file/d/1QGlbPBEyRpVtGssJ2zBYbEqEs3d4kcy1/view?usp=sharing"
             target="_blank"
             className="rounded-lg border border-cyan-400 px-4 py-2 text-sm font-medium text-cyan-400 transition-all duration-300 ease-in-out hover:bg-cyan-400 hover:text-black"
           >
