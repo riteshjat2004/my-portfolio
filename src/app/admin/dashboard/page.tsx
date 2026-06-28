@@ -98,6 +98,19 @@ export default function Dashboard() {
             Track visitors and engagement
           </p>
         </Link>
+
+        <Link
+          href="/admin/resume"
+          className="rounded-2xl border border-zinc-800 p-6 transition hover:border-cyan-400"
+        >
+          <h2 className="text-2xl font-bold">
+            Resume
+          </h2>
+
+          <p className="mt-2 text-zinc-400">
+            Upload and manage your resume
+          </p>
+        </Link>
       </div>
     </main>
   );

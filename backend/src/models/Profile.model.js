@@ -22,15 +22,22 @@ const profileSchema = new mongoose.Schema(
     },
 
     skills: [String],
+
+    resumeUrl: {
+      type: String,
+      default: "",
+    },
+
+    resumeFileName: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
   }
 );
 
-const Profile = mongoose.model(
-  "Profile",
-  profileSchema
-);
+const Profile = mongoose.model("Profile", profileSchema);
 
 export default Profile;

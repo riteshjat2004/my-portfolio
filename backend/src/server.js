@@ -1,7 +1,12 @@
+import "dotenv/config";
+
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
+
+// import dotenv from "dotenv";
+// dotenv.config();
+
 import healthRoutes from "./routes/health.routes.js";
 
 import profileRoutes from "./routes/profile.routes.js";
@@ -20,8 +25,9 @@ import blogRoutes from "./routes/blog.routes.js";
 
 import analyticsRoutes from "./routes/analytics.routes.js";
 
-dotenv.config();
 connectDB();
+
+// console.log(process.env.CLOUDINARY_CLOUD_NAME);
 
 const app = express();
 

@@ -25,6 +25,10 @@ export default function Navbar() {
     setIsMenuOpen(false);
   };
 
+  const handleResumeClick = () => {
+    handleLinkClick();
+  };
+
   return (
     <header className="w-full sticky top-0 z-50 border-b border-zinc-800 bg-black/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -48,13 +52,13 @@ export default function Navbar() {
             </a>
           ))}
 
-          <a
-            href="https://drive.google.com/file/d/1QGlbPBEyRpVtGssJ2zBYbEqEs3d4kcy1/view?usp=sharing"
-            target="_blank"
+          <Link
+            href="/resume"
+            onClick={handleResumeClick}
             className="rounded-lg border border-cyan-400 px-4 py-2 text-sm font-medium text-cyan-400 transition-all duration-300 ease-in-out hover:bg-cyan-400 hover:text-black"
           >
             Resume
-          </a>
+          </Link>
         </nav>
 
         {/* Mobile Hamburger Button */}
@@ -115,10 +119,9 @@ export default function Navbar() {
               </a>
             ))}
 
-            <a
-              href="https://drive.google.com/file/d/1RmMlSXtGqk0s_NqU3li6rQqPLJ-Oe8S2/view?usp=sharing"
-              target="_blank"
-              onClick={handleLinkClick}
+            <Link
+              href="/resume"
+              onClick={handleResumeClick}
               className={`inline-block w-fit rounded-lg border border-cyan-400 px-4 py-2 text-sm font-medium text-cyan-400 transition-all duration-300 ease-in-out hover:bg-cyan-400 hover:text-black ${
                 isMenuOpen
                   ? "translate-y-0 opacity-100"
@@ -129,7 +132,7 @@ export default function Navbar() {
               }}
             >
               Resume
-            </a>
+            </Link>
           </div>
         </div>
       </nav>

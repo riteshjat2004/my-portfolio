@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { trackResumeDownload } from "@/api/analyticsApi";
 
 export default function Hero() {
-  const handleResumeClick = () => {
-    trackResumeDownload();
+  const handleResumeClick = async () => {
+    await trackResumeDownload();
   };
 
   return (
@@ -41,14 +42,13 @@ export default function Hero() {
             View Projects
           </a>
 
-          <a
-            href="https://drive.google.com/file/d/1QGlbPBEyRpVtGssJ2zBYbEqEs3d4kcy1/view?usp=sharing"
-            target="_blank"
+          <Link
+            href="/resume"
             onClick={handleResumeClick}
             className="rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-white transition hover:border-cyan-400 hover:text-cyan-400 hover:scale-105"
           >
-            Download Resume
-          </a>
+            View Resume
+          </Link>
         </div>
 
         <div className="mt-12 flex flex-wrap gap-6 text-zinc-400">
