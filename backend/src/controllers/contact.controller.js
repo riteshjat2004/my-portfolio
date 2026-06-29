@@ -1,9 +1,21 @@
 import Contact from "../models/contact.model.js";
+import Analytics from "../models/Analytics.model.js";
 import { saveToTrash } from "../utils/trash.js";
 
 export const createContact = async (req, res) => {
   try {
     const contact = await Contact.create(req.body);
+
+    // Update contact submission analytics
+    let stats = await Analytics.findOne();
+
+    if (!stats) {
+      stats = await Analytics.create({});
+    }
+
+    stats.contactSubmissions += 1;
+
+    await stats.save();
 
     res.status(201).json({
       success: true,
