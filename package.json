@@ -12,10 +12,11 @@
     "@fontsource/inter": "^5.2.8",
     "@tailwindcss/typography": "^0.5.19",
     "axios": "^1.16.1",
-    "express-rate-limit": "^8.5.2",
     "framer-motion": "^12.40.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.17.0",
-    "next": "16.2.6",
+    "next": "^16.3.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
@@ -27,7 +28,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "^16.3.7",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

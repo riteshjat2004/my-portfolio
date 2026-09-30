@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   getBlogs,
+  getAdminBlogs,
   createBlog,
   updateBlog,
   deleteBlog,
@@ -32,7 +33,7 @@ export default function AdminBlogs() {
 
   const fetchBlogs = async () => {
     try {
-      const data = await getBlogs();
+      const data = await getAdminBlogs();
       setBlogs(data);
     } catch (error) {
       console.error(error);

@@ -17,6 +17,9 @@ export default function Contact() {
   const [message, setMessage] =
     useState("");
 
+  const [honeypot, setHoneypot] =
+    useState("");
+
   const [loading, setLoading] =
     useState(false);
 
@@ -40,6 +43,7 @@ export default function Contact() {
         name,
         email,
         message,
+        _hp: honeypot,
       });
 
       setSuccess(
@@ -49,13 +53,16 @@ export default function Contact() {
       setName("");
       setEmail("");
       setMessage("");
+      setHoneypot("");
 
-    } catch (error) {
-      console.error(error);
+    } catch (err: unknown) {
+      console.error(err);
 
-      setError(
-        "Failed to send message."
-      );
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || "Failed to send message.";
+
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -77,6 +84,17 @@ export default function Contact() {
             onSubmit={handleSubmit}
             className="space-y-6"
           >
+            {/* Honeypot field for bot protection (hidden from humans) */}
+            <input
+              type="text"
+              name="_gotcha"
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              className="hidden"
+              aria-hidden="true"
+            />
 
             <input
               type="text"
@@ -85,6 +103,9 @@ export default function Contact() {
               onChange={(e) =>
                 setName(e.target.value)
               }
+              required
+              minLength={2}
+              maxLength={100}
               className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-4 text-white outline-none"
             />
 
@@ -95,16 +116,21 @@ export default function Contact() {
               onChange={(e) =>
                 setEmail(e.target.value)
               }
+              required
+              maxLength={150}
               className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-4 text-white outline-none"
             />
 
             <textarea
               rows={6}
-              placeholder="Your Message"
+              placeholder="Your Message (minimum 10 characters)"
               value={message}
               onChange={(e) =>
                 setMessage(e.target.value)
               }
+              required
+              minLength={10}
+              maxLength={5000}
               className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-4 text-white outline-none"
             />
 

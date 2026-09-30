@@ -1,15 +1,14 @@
 import Project from "../models/Project.model.js";
 import { saveToTrash } from "../utils/trash.js";
+import { sendError } from "../utils/errorHandler.js";
 
 export const getProjects = async (req, res) => {
   try {
-    const projects = await Project.find();
+    const projects = await Project.find().sort({ featured: -1, createdAt: -1 });
 
     res.status(200).json(projects);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to retrieve projects");
   }
 };
 
@@ -21,9 +20,7 @@ export const createProject = async (req, res) => {
 
     res.status(201).json(project);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to create project");
   }
 };
 
@@ -52,9 +49,7 @@ export const updateProject = async (req, res) => {
     res.status(200).json(updatedProject);
 
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to update project");
   }
 };
 
@@ -78,9 +73,7 @@ export const deleteProject = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to delete project");
   }
 };
 
@@ -91,15 +84,13 @@ export const getFeaturedProjects =
       const projects =
         await Project.find({
           featured: true,
-        });
+        }).sort({ createdAt: -1 });
 
       res.status(200).json(
         projects
       );
 
     } catch (error) {
-      res.status(500).json({
-        message: error.message,
-      });
+      sendError(res, error, "Failed to retrieve featured projects");
     }
 };

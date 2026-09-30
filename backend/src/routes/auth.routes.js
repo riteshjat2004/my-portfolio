@@ -1,5 +1,5 @@
 import express from "express";
-import { loginLimiter } from "../middleware/rateLimit.middleware.js";
+import { loginLimiter, registerLimiter } from "../middleware/rateLimit.middleware.js";
 
 import {
   register,
@@ -9,7 +9,7 @@ import {
 
 const router = express.Router();
 
-router.post("/register", register);
+router.post("/register", registerLimiter, register);
 
 router.post("/login",loginLimiter, login);
 

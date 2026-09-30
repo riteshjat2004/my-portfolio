@@ -1,31 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  getOrCreateVisitorId,
-} from "@/utils/visitorTracking";
+import { getOrCreateVisitorId } from "@/utils/visitorTracking";
 import { trackVisit } from "@/api/analyticsApi";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function ClientLayout() {
   const pathname = usePathname();
+  const router = useRouter();
 
+  // Visitor Tracking
   useEffect(() => {
-    // Initialize visitor ID and track visit
-    const visitorId =
-      getOrCreateVisitorId();
+    const visitorId = getOrCreateVisitorId();
 
     if (visitorId) {
-      // Determine page name from pathname
-      let pageName = pathname
-        .split("/")
-        .filter(Boolean)[0] || "home";
+      let pageName = pathname.split("/").filter(Boolean)[0] || "home";
 
-      // Map paths to readable names
-      const pageMap: Record<
-        string,
-        string
-      > = {
+      const pageMap: Record<string, string> = {
         "": "home",
         about: "about",
         projects: "projects",
@@ -34,12 +25,27 @@ export default function ClientLayout() {
         admin: "admin",
       };
 
-      pageName =
-        pageMap[pageName] || pageName;
-
+      pageName = pageMap[pageName] || pageName;
       trackVisit(visitorId, pageName);
     }
   }, [pathname]);
+
+  // Global Owner Shortcut: Ctrl + Shift + A / Cmd + Shift + A
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        (e.key === "A" || e.key === "a")
+      ) {
+        e.preventDefault();
+        router.push("/admin/login");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [router]);
 
   return null;
 }

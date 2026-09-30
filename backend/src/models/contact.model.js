@@ -25,6 +25,8 @@ const contactSchema = new mongoose.Schema(
   }
 );
 
+contactSchema.index({ createdAt: -1 });
+
 const Contact = mongoose.model(
   "Contact",
   contactSchema

@@ -1,9 +1,19 @@
 import api from "./axios";
 import { Blog } from "@/types/blog";
 
-export const getBlogs = async (): Promise<Blog[]> => {
-  const response = await api.get("/blogs");
+export interface GetBlogsParams {
+  all?: boolean;
+  status?: string;
+  includeContent?: boolean;
+}
+
+export const getBlogs = async (params?: GetBlogsParams): Promise<Blog[]> => {
+  const response = await api.get("/blogs", { params });
   return response.data;
+};
+
+export const getAdminBlogs = async (): Promise<Blog[]> => {
+  return getBlogs({ all: true, includeContent: true });
 };
 
 export const getBlogBySlug = async (
@@ -29,7 +39,7 @@ export const createBlog = async (
 
 export const updateBlog = async (
   id: string,
-  data: Omit<Blog, "_id">
+  data: Partial<Omit<Blog, "_id">>
 ) => {
   const response = await api.put(
     `/blogs/${id}`,

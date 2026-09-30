@@ -41,6 +41,8 @@ const blogSchema = new mongoose.Schema(
   }
 );
 
+blogSchema.index({ published: 1, createdAt: -1 });
+
 const Blog = mongoose.model(
   "Blog",
   blogSchema

@@ -22,8 +22,6 @@ const analyticsSchema = new mongoose.Schema(
       default: 0,
     },
 
-    visitorIds: [String],
-
     dailyVisitors: [
       {
         date: String,

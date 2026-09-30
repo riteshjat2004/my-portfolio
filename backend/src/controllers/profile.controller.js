@@ -1,6 +1,7 @@
 import { Readable } from "stream";
 import Profile from "../models/Profile.model.js";
 import { uploadResumeToCloudinary } from "../services/cloudinary.service.js";
+import { sendError } from "../utils/errorHandler.js";
 
 export const getProfile = async (req, res) => {
   try {
@@ -8,22 +9,34 @@ export const getProfile = async (req, res) => {
 
     res.status(200).json(profile);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to retrieve profile");
   }
 };
 
 export const createProfile = async (req, res) => {
-    console.log(req.body);
   try {
-    const profile = await Profile.findOne();
+    const { name, role, college, cgpa, skills } = req.body;
+    const updateData = {
+      name: name?.trim(),
+      role: role?.trim(),
+      college: college?.trim() || "",
+      ...(cgpa !== undefined ? { cgpa: Number(cgpa) } : {}),
+      ...(Array.isArray(skills) ? { skills } : {}),
+    };
 
-    res.status(201).json(profile);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
+    const profile = await Profile.findOneAndUpdate(
+      {},
+      { $set: updateData },
+      { upsert: true, new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      profile,
     });
+  } catch (error) {
+    sendError(res, error, "Failed to process profile");
   }
 };
 
@@ -73,9 +86,7 @@ export const getResume = async (req, res) => {
 
     return Readable.fromWeb(remoteResponse.body).pipe(res);
   } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
+    return sendError(res, error, "Failed to load resume preview");
   }
 };
 
@@ -83,17 +94,20 @@ export const updateResume = async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({
+                success: false,
                 message: "Resume file is required.",
             });
         }
 
         const result = await uploadResumeToCloudinary(req.file.buffer, req.file.originalname);
 
-        const profile = await Profile.findOne();
+        let profile = await Profile.findOne();
 
         if (!profile) {
-            return res.status(404).json({
-                message: "Profile not found.",
+            profile = new Profile({
+                name: "Developer",
+                role: "Full Stack Developer",
+                college: "N/A",
             });
         }
 
@@ -102,14 +116,13 @@ export const updateResume = async (req, res) => {
         await profile.save();
 
         res.status(200).json({
+            success: true,
             message: "Resume updated successfully.",
             resumeUrl: profile.resumeUrl,
             resumeFileName: profile.resumeFileName,
         });
 
     } catch (error) {
-        res.status(500).json({
-            message: error.message,
-        });
+        sendError(res, error, "Failed to upload resume");
     }
 };

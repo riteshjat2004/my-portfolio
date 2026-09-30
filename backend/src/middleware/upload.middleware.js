@@ -40,4 +40,42 @@ export const uploadResume = (req, res, next) => {
     });
 };
 
+const imageUpload = multer({
+    storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10 MB
+    },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/webp",
+            "image/gif",
+            "image/svg+xml",
+        ];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error("Only image files (JPEG, PNG, WebP, GIF, SVG) are allowed."));
+        }
+    },
+});
+
+export const uploadDevVaultImageMiddleware = (req, res, next) => {
+    imageUpload.single("image")(req, res, (error) => {
+        if (error) {
+            if (error.code === "LIMIT_FILE_SIZE") {
+                return res.status(413).json({
+                    message: "Image file must be smaller than 10MB.",
+                });
+            }
+            return res.status(400).json({
+                message: error.message || "Invalid image upload.",
+            });
+        }
+        next();
+    });
+};
+
 export default upload;

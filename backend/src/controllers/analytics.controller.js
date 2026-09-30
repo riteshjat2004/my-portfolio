@@ -1,4 +1,6 @@
 import Analytics from "../models/Analytics.model.js";
+import VisitorSession from "../models/VisitorSession.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // Helper function to get today's date in YYYY-MM-DD format
 const getTodayDate = () => {
@@ -6,9 +8,34 @@ const getTodayDate = () => {
   return today.toISOString().split("T")[0];
 };
 
+// Check if request originates from automated crawlers, scrapers, or monitors
+const isBot = (userAgent = "") => {
+  const bots = [
+    "bot",
+    "spider",
+    "crawl",
+    "slurp",
+    "facebookexternalhit",
+    "whatsapp",
+    "telegram",
+    "twitterbot",
+    "pinterest",
+    "linkedinbot",
+    "curl",
+    "wget",
+    "python",
+    "postman",
+    "headless",
+    "uptime",
+    "render",
+  ];
+  const ua = userAgent.toLowerCase();
+  return bots.some((b) => ua.includes(b));
+};
+
 export const getStats = async (req, res) => {
   try {
-    let stats = await Analytics.findOne();
+    let stats = await Analytics.findOne().select("-__v");
 
     if (!stats) {
       stats = await Analytics.create({});
@@ -16,145 +43,165 @@ export const getStats = async (req, res) => {
 
     res.json(stats);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to retrieve analytics stats");
   }
 };
 
 export const trackVisitor = async (req, res) => {
   try {
-    // Skip tracking if owner cookie is valid
-    if (req.cookies.ownerToken === process.env.OWNER_SECRET) {
-      return res.json({
-        success: true,
-      });
+    // Skip tracking if request is from a known bot/crawler
+    const userAgent = req.headers["user-agent"] || "";
+    if (isBot(userAgent)) {
+      return res.json({ success: true, ignored: true });
+    }
+
+    // Skip tracking if owner cookie is present and valid
+    if (req.cookies?.ownerToken && req.cookies.ownerToken === process.env.OWNER_SECRET) {
+      return res.json({ success: true, ignored: true });
     }
 
     const { visitorId, page } = req.body;
 
-    if (!visitorId) {
+    // Validate visitorId
+    if (!visitorId || typeof visitorId !== "string" || visitorId.length > 100) {
       return res.status(400).json({
-        message: "visitorId is required",
+        success: false,
+        message: "Valid visitorId is required",
       });
     }
 
-    let stats = await Analytics.findOne();
-
-    if (!stats) {
-      stats = await Analytics.create({});
+    // Sanitize visitorId and page name
+    const sanitizedVisitorId = visitorId.replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!sanitizedVisitorId) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid visitorId format",
+      });
     }
 
-    // Always increment total visitors
-    stats.totalVisitors += 1;
+    // Determine if visitor is unique via dedicated VisitorSession collection
+    const existingSession = await VisitorSession.findOneAndUpdate(
+      { visitorId: sanitizedVisitorId },
+      { $setOnInsert: { visitorId: sanitizedVisitorId } },
+      { upsert: true, new: false }
+    );
+    const isNewUnique = !existingSession;
 
-    // Check if this is a new unique visitor
-    if (!stats.visitorIds.includes(visitorId)) {
-      stats.visitorIds.push(visitorId);
-      stats.uniqueVisitors = stats.visitorIds.length;
-    }
-
-    // Track page views
-    if (page) {
-      stats.pageViews.set(
-        page,
-        (stats.pageViews.get(page) || 0) + 1
-      );
-    }
-
-    // Update daily visitors
     const today = getTodayDate();
-    const dailyEntry = stats.dailyVisitors.find(
-      (entry) => entry.date === today
+    const safePage = typeof page === "string"
+      ? page.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 50)
+      : null;
+
+    // Build atomic update operations
+    const incOperations = {
+      totalVisitors: 1,
+      ...(isNewUnique ? { uniqueVisitors: 1 } : {}),
+      ...(safePage ? { [`pageViews.${safePage}`]: 1 } : {}),
+    };
+
+    // Atomic update of daily visitors and global counters
+    const updated = await Analytics.findOneAndUpdate(
+      { "dailyVisitors.date": today },
+      {
+        $inc: {
+          ...incOperations,
+          "dailyVisitors.$.count": 1,
+        },
+      },
+      { new: true }
     );
 
-    if (dailyEntry) {
-      dailyEntry.count += 1;
-    } else {
-      stats.dailyVisitors.push({
-        date: today,
-        count: 1,
-      });
+    // If today's date entry doesn't exist yet, push new date atomically
+    if (!updated) {
+      await Analytics.findOneAndUpdate(
+        {},
+        {
+          $inc: incOperations,
+          $push: {
+            dailyVisitors: {
+              date: today,
+              count: 1,
+            },
+          },
+        },
+        { upsert: true, new: true }
+      );
     }
-
-    await stats.save();
 
     res.json({
       success: true,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to record visitor");
   }
 };
 
 export const trackResumeDownload = async (req, res) => {
   try {
+    const userAgent = req.headers["user-agent"] || "";
+    if (isBot(userAgent)) {
+      return res.json({ success: true, ignored: true });
+    }
+
     // Skip tracking if owner cookie is valid
-    if (req.cookies.ownerToken === process.env.OWNER_SECRET) {
+    if (req.cookies?.ownerToken && req.cookies.ownerToken === process.env.OWNER_SECRET) {
       return res.json({
         success: true,
+        ignored: true,
       });
     }
 
-    let stats = await Analytics.findOne();
-
-    if (!stats) {
-      stats = await Analytics.create({});
-    }
-
-    stats.resumeDownloads += 1;
-
-    await stats.save();
+    await Analytics.findOneAndUpdate(
+      {},
+      { $inc: { resumeDownloads: 1 } },
+      { upsert: true, new: true }
+    );
 
     res.json({
       success: true,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to record resume download");
   }
 };
 
 export const trackProjectClick = async (req, res) => {
   try {
+    const userAgent = req.headers["user-agent"] || "";
+    if (isBot(userAgent)) {
+      return res.json({ success: true, ignored: true });
+    }
+
     // Skip tracking if owner cookie is valid
-    if (req.cookies.ownerToken === process.env.OWNER_SECRET) {
+    if (req.cookies?.ownerToken && req.cookies.ownerToken === process.env.OWNER_SECRET) {
       return res.json({
         success: true,
+        ignored: true,
       });
     }
 
     const { projectId } = req.body;
 
-    if (!projectId) {
+    if (!projectId || typeof projectId !== "string" || projectId.length > 100) {
       return res.status(400).json({
-        message: "projectId is required",
+        success: false,
+        message: "Valid projectId is required",
       });
     }
 
-    let stats = await Analytics.findOne();
+    const safeProjectId = projectId.replace(/[^a-zA-Z0-9_-]/g, "");
 
-    if (!stats) {
-      stats = await Analytics.create({});
-    }
-
-    stats.projectClicks.set(
-      projectId,
-      (stats.projectClicks.get(projectId) || 0) + 1
+    await Analytics.findOneAndUpdate(
+      {},
+      { $inc: { [`projectClicks.${safeProjectId}`]: 1 } },
+      { upsert: true, new: true }
     );
-
-    await stats.save();
 
     res.json({
       success: true,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to record project click");
   }
 };
 
@@ -166,10 +213,7 @@ export const getTopPages = async (req, res) => {
       stats = await Analytics.create({});
     }
 
-    // Convert Map to array and sort by count
-    const topPages = Array.from(
-      stats.pageViews.entries()
-    )
+    const topPages = Array.from(stats.pageViews?.entries?.() || [])
       .map(([page, views]) => ({
         page,
         views,
@@ -179,9 +223,7 @@ export const getTopPages = async (req, res) => {
 
     res.json(topPages);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to retrieve top pages");
   }
 };
 
@@ -193,10 +235,7 @@ export const getTopProjects = async (req, res) => {
       stats = await Analytics.create({});
     }
 
-    // Convert Map to array and sort by count
-    const topProjects = Array.from(
-      stats.projectClicks.entries()
-    )
+    const topProjects = Array.from(stats.projectClicks?.entries?.() || [])
       .map(([projectId, clicks]) => ({
         projectId,
         clicks,
@@ -206,8 +245,6 @@ export const getTopProjects = async (req, res) => {
 
     res.json(topProjects);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    sendError(res, error, "Failed to retrieve top projects");
   }
 };

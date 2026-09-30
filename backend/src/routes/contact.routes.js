@@ -1,5 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
+import { contactLimiter } from "../middleware/rateLimit.middleware.js";
 
 import {
   createContact,
@@ -11,7 +12,7 @@ const router = express.Router();
 
 router.get("/", authMiddleware, getContacts);
 
-router.post("/", createContact);
+router.post("/", contactLimiter, createContact);
 
 router.delete("/:id", authMiddleware, deleteContact);
 

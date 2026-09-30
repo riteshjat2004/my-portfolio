@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
-import { getCurrentResume, getResumeApiUrl, uploadResumeFile } from "@/api/profile";
+import { getCurrentResume, uploadResumeFile } from "@/api/profile";
 
 export default function ResumePage() {
   const isAuthenticated = useProtectedRoute();

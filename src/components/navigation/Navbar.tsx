@@ -5,9 +5,11 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const navLinks = [
-  { label: "About", href: "#about" },
-  { label: "Projects", href: "#projects" },
-  { label: "Contact", href: "#contact" },
+  { label: "About", href: "/#about" },
+  { label: "Projects", href: "/#projects" },
+  { label: "DevVault", href: "/devvault" },
+  { label: "Blogs", href: "/blogs" },
+  { label: "Contact", href: "/#contact" },
 ];
 
 export default function Navbar() {
@@ -21,12 +23,23 @@ export default function Navbar() {
     }
   };
 
-  const handleLinkClick = () => {
+  const handleNavLinkClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) => {
     setIsMenuOpen(false);
+    if (href.startsWith("/#") && pathname === "/") {
+      e.preventDefault();
+      const targetId = href.replace("/#", "");
+      const elem = document.getElementById(targetId);
+      if (elem) {
+        elem.scrollIntoView({ behavior: "smooth" });
+      }
+    }
   };
 
   const handleResumeClick = () => {
-    handleLinkClick();
+    setIsMenuOpen(false);
   };
 
   return (
@@ -35,21 +48,22 @@ export default function Navbar() {
         <Link
           href="/"
           onClick={handleLogoClick}
-          className="text-xl font-bold tracking-tight text-white"
+          className="text-xl font-bold tracking-tight text-white hover:text-cyan-400 transition"
         >
-        <span className="text-cyan-400">Ritesh</span>
+          <span className="text-cyan-400">Ritesh</span>
         </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.label}
               href={link.href}
+              onClick={(e) => handleNavLinkClick(e, link.href)}
               className="text-sm font-medium text-zinc-400 transition-all duration-300 ease-in-out hover:text-cyan-400"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
 
           <Link
@@ -102,10 +116,10 @@ export default function Navbar() {
         <div className="mx-auto max-w-6xl px-6 py-6">
           <div className="flex flex-col gap-6">
             {navLinks.map((link, index) => (
-              <a
+              <Link
                 key={link.label}
                 href={link.href}
-                onClick={handleLinkClick}
+                onClick={(e) => handleNavLinkClick(e, link.href)}
                 className={`text-sm font-medium text-zinc-400 transition-all duration-300 ease-in-out hover:text-cyan-400 ${
                   isMenuOpen
                     ? "translate-y-0 opacity-100"
@@ -116,7 +130,7 @@ export default function Navbar() {
                 }}
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
 
             <Link
