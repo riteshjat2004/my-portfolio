@@ -9,6 +9,7 @@ import {
 } from "@/api/devvaultApi";
 import { slugify } from "@/utils/slugify";
 import DevVaultImageUploader from "./DevVaultImageUploader";
+import DevVaultPopconfirm from "./DevVaultPopconfirm";
 
 interface DevVaultCategoryManagerProps {
   categories: DevVaultCategory[];
@@ -106,49 +107,6 @@ export default function DevVaultCategoryManager({
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message ||
         (err instanceof Error ? err.message : "Failed to save category.");
-      setFeedback({ type: "error", message: msg });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (cat: DevVaultCategory) => {
-    if (cat.contentCount && cat.contentCount > 0) {
-      const force = confirm(
-        `Category "${cat.name}" has ${cat.contentCount} active content items.\n\nAre you sure you want to force delete? This will orphan these content items.`
-      );
-      if (!force) return;
-      try {
-        setLoading(true);
-        await deleteDevVaultCategory(cat._id, true);
-        setFeedback({ type: "success", message: `Category "${cat.name}" deleted.` });
-        onRefresh();
-      } catch (err: unknown) {
-        const msg =
-          (err as { response?: { data?: { message?: string } } })?.response?.data
-            ?.message ||
-          (err instanceof Error ? err.message : "Failed to delete category.");
-        setFeedback({ type: "error", message: msg });
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete category "${cat.name}"?`)) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await deleteDevVaultCategory(cat._id);
-      setFeedback({ type: "success", message: `Category "${cat.name}" deleted.` });
-      onRefresh();
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ||
-        (err instanceof Error ? err.message : "Failed to delete category.");
       setFeedback({ type: "error", message: msg });
     } finally {
       setLoading(false);
@@ -422,13 +380,37 @@ export default function DevVaultCategoryManager({
                         >
                           Edit
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(cat)}
-                          className="rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-xs text-red-400 hover:bg-red-500/20 transition"
+                        <DevVaultPopconfirm
+                          title={cat.contentCount && cat.contentCount > 0 ? "Force delete category?" : "Delete category?"}
+                          onConfirm={async () => {
+                            const force = Boolean(cat.contentCount && cat.contentCount > 0);
+                            try {
+                              setLoading(true);
+                              await deleteDevVaultCategory(cat._id, force);
+                              setFeedback({ type: "success", message: `Category "${cat.name}" deleted.` });
+                              onRefresh();
+                            } catch (err: unknown) {
+                              const msg =
+                                (err as { response?: { data?: { message?: string } } })?.response?.data
+                                  ?.message ||
+                                (err instanceof Error ? err.message : "Failed to delete category.");
+                              setFeedback({ type: "error", message: msg });
+                            } finally {
+                              setLoading(false);
+                            }
+                          }}
+                          confirmLabel="Delete"
                         >
-                          Delete
-                        </button>
+                          {(openConfirm) => (
+                            <button
+                              type="button"
+                              onClick={openConfirm}
+                              className="rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-xs text-red-400 hover:bg-red-500/20 transition cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </DevVaultPopconfirm>
                       </div>
                     </td>
                   </tr>

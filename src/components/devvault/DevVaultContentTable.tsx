@@ -12,6 +12,7 @@ import {
   deleteDevVaultContent,
 } from "@/api/devvaultApi";
 import DevVaultBlockRenderer from "./DevVaultBlockRenderer";
+import DevVaultPopconfirm from "./DevVaultPopconfirm";
 
 interface DevVaultContentTableProps {
   content: DevVaultContent[];
@@ -69,18 +70,6 @@ export default function DevVaultContentTable({
       onRefresh();
     } catch (err: unknown) {
       console.error("Failed to toggle featured:", err);
-    }
-  };
-
-  const handleDelete = async (item: DevVaultContent) => {
-    if (!confirm(`Delete topic "${item.title}"? A backup snapshot will be kept in the Trash collection.`)) {
-      return;
-    }
-    try {
-      await deleteDevVaultContent(item._id);
-      onRefresh();
-    } catch (err: unknown) {
-      console.error("Failed to delete content:", err);
     }
   };
 
@@ -426,14 +415,29 @@ export default function DevVaultContentTable({
                           >
                             Edit
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(item)}
-                            className="rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-xs text-red-400 hover:bg-red-500/20 transition"
-                            title="Delete topic"
+                          <DevVaultPopconfirm
+                            title="Delete topic?"
+                            onConfirm={async () => {
+                              try {
+                                await deleteDevVaultContent(item._id);
+                                onRefresh();
+                              } catch (err: unknown) {
+                                console.error("Failed to delete content:", err);
+                              }
+                            }}
+                            confirmLabel="Delete"
                           >
-                            ✕
-                          </button>
+                            {(openConfirm) => (
+                              <button
+                                type="button"
+                                onClick={openConfirm}
+                                className="rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-xs text-red-400 hover:bg-red-500/20 transition cursor-pointer"
+                                title="Delete topic"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </DevVaultPopconfirm>
                         </div>
                       </td>
                     </tr>

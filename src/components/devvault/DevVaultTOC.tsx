@@ -5,6 +5,7 @@ import { DevVaultBlock, HeadingBlockData } from "@/types/devvault";
 
 interface DevVaultTOCProps {
   blocks: DevVaultBlock[] | string | Record<string, unknown> | null | undefined;
+  variant?: "all" | "mobile" | "desktop";
 }
 
 interface TOCItem {
@@ -13,7 +14,7 @@ interface TOCItem {
   level: number;
 }
 
-export default function DevVaultTOC({ blocks }: DevVaultTOCProps) {
+export default function DevVaultTOC({ blocks, variant = "all" }: DevVaultTOCProps) {
   const [activeId, setActiveId] = useState<string>("");
   const [isOpenMobile, setIsOpenMobile] = useState<boolean>(false);
 
@@ -91,70 +92,74 @@ export default function DevVaultTOC({ blocks }: DevVaultTOCProps) {
   return (
     <>
       {/* Mobile Accordion */}
-      <div className="lg:hidden my-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-        <button
-          type="button"
-          onClick={() => setIsOpenMobile(!isOpenMobile)}
-          className="w-full flex items-center justify-between text-xs font-mono font-bold text-zinc-300 uppercase tracking-wider"
-        >
-          <span className="flex items-center gap-2">
-            <span>📑</span>
-            <span>Table of Contents ({items.length})</span>
-          </span>
-          <span>{isOpenMobile ? "▲" : "▼"}</span>
-        </button>
+      {variant !== "desktop" && (
+        <div className="lg:hidden my-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+          <button
+            type="button"
+            onClick={() => setIsOpenMobile(!isOpenMobile)}
+            className="w-full flex items-center justify-between text-xs font-mono font-bold text-zinc-300 uppercase tracking-wider"
+          >
+            <span className="flex items-center gap-2">
+              <span>📑</span>
+              <span>Table of Contents ({items.length})</span>
+            </span>
+            <span>{isOpenMobile ? "▲" : "▼"}</span>
+          </button>
 
-        {isOpenMobile && (
-          <nav className="mt-3 pt-3 border-t border-zinc-800 space-y-1.5 text-xs">
-            {items.map((item) => (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                onClick={(e) => scrollToSection(e, item.id)}
-                className={`block py-1 transition-colors ${
-                  item.level === 3 ? "pl-4 text-zinc-400" : "font-semibold text-zinc-200"
-                } ${
-                  activeId === item.id
-                    ? "text-cyan-400 font-bold"
-                    : "hover:text-cyan-300"
-                }`}
-              >
-                {item.text}
-              </a>
-            ))}
-          </nav>
-        )}
-      </div>
+          {isOpenMobile && (
+            <nav className="mt-3 pt-3 border-t border-zinc-800 space-y-1.5 text-xs">
+              {items.map((item) => (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  onClick={(e) => scrollToSection(e, item.id)}
+                  className={`block py-1 transition-colors ${
+                    item.level === 3 ? "pl-4 text-zinc-400" : "font-semibold text-zinc-200"
+                  } ${
+                    activeId === item.id
+                      ? "text-cyan-400 font-bold"
+                      : "hover:text-cyan-300"
+                  }`}
+                >
+                  {item.text}
+                </a>
+              ))}
+            </nav>
+          )}
+        </div>
+      )}
 
       {/* Desktop Sticky Sidebar */}
-      <aside className="hidden lg:block sticky top-28 space-y-3">
-        <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-zinc-400 font-bold pb-2 border-b border-zinc-800/80">
-          <span>📑</span>
-          <span>Table of Contents</span>
-        </div>
+      {variant !== "mobile" && (
+        <aside className="hidden lg:block sticky top-28 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-zinc-400 font-bold pb-2 border-b border-zinc-800/80">
+            <span>📑</span>
+            <span>Table of Contents</span>
+          </div>
 
-        <nav className="space-y-1 text-xs max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-800">
-          {items.map((item) => {
-            const isActive = activeId === item.id;
-            return (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                onClick={(e) => scrollToSection(e, item.id)}
-                className={`group flex items-center py-1.5 transition-all duration-200 ${
-                  item.level === 3 ? "pl-5 text-xs" : "pl-2 font-medium"
-                } ${
-                  isActive
-                    ? "text-cyan-400 font-bold border-l-2 border-cyan-400 pl-3 bg-cyan-950/20 rounded-r-lg"
-                    : "text-zinc-400 hover:text-zinc-200 hover:translate-x-0.5"
-                }`}
-              >
-                <span className="truncate">{item.text}</span>
-              </a>
-            );
-          })}
-        </nav>
-      </aside>
+          <nav className="space-y-1 text-xs max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-800">
+            {items.map((item) => {
+              const isActive = activeId === item.id;
+              return (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  onClick={(e) => scrollToSection(e, item.id)}
+                  className={`group flex items-center py-1.5 transition-all duration-200 ${
+                    item.level === 3 ? "pl-5 text-xs" : "pl-2 font-medium"
+                  } ${
+                    isActive
+                      ? "text-cyan-400 font-bold border-l-2 border-cyan-400 pl-3 bg-cyan-950/20 rounded-r-lg"
+                      : "text-zinc-400 hover:text-zinc-200 hover:translate-x-0.5"
+                  }`}
+                >
+                  <span className="truncate">{item.text}</span>
+                </a>
+              );
+            })}
+          </nav>
+        </aside>
+      )}
     </>
   );
 }

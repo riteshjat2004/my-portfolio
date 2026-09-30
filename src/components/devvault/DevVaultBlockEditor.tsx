@@ -23,6 +23,7 @@ import {
   MarkdownBlockData,
 } from "@/types/devvault";
 import DevVaultImageUploader from "./DevVaultImageUploader";
+import DevVaultPopconfirm from "./DevVaultPopconfirm";
 
 const PROGRAMMING_LANGUAGES = [
   "javascript",
@@ -82,6 +83,7 @@ interface DevVaultBlockEditorProps {
   onMoveDown: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onInsertBelow?: () => void;
 }
 
 export default function DevVaultBlockEditor({
@@ -93,6 +95,7 @@ export default function DevVaultBlockEditor({
   onMoveDown,
   onDuplicate,
   onDelete,
+  onInsertBelow,
 }: DevVaultBlockEditorProps) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -172,14 +175,33 @@ export default function DevVaultBlockEditor({
           >
             ⎘
           </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="h-7 w-7 rounded-lg border border-red-500/20 bg-red-500/10 text-xs text-red-400 hover:bg-red-500/20 transition"
-            title="Delete Block"
+          {onInsertBelow && (
+            <button
+              type="button"
+              onClick={onInsertBelow}
+              className="h-7 px-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-xs font-mono font-bold text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-500/50 transition flex items-center gap-1"
+              title="Insert block directly below"
+            >
+              <span>+</span>
+              <span className="hidden sm:inline text-[10px]">Insert Below</span>
+            </button>
+          )}
+          <DevVaultPopconfirm
+            title={`Delete block #${index + 1}?`}
+            onConfirm={onDelete}
+            confirmLabel="Delete"
           >
-            ✕
-          </button>
+            {(openConfirm) => (
+              <button
+                type="button"
+                onClick={openConfirm}
+                className="h-7 w-7 rounded-lg border border-red-500/20 bg-red-500/10 text-xs text-red-400 hover:bg-red-500/20 transition cursor-pointer"
+                title="Delete Block"
+              >
+                ✕
+              </button>
+            )}
+          </DevVaultPopconfirm>
         </div>
       </div>
 
@@ -414,59 +436,8 @@ function RenderBlockSpecificInputs({
     }
 
     case "table": {
-      const data = block.data as TableBlockData;
-      const rawHeaders = (data.headers || []).join(", ");
-      const rawRows = (data.rows || []).map((r) => r.join(" | ")).join("\n");
-
-      return (
-        <div className="space-y-3">
-          <input
-            type="text"
-            value={data.caption || ""}
-            onChange={(e) => updateData({ caption: e.target.value })}
-            placeholder="Table Caption / Description (e.g. HTTP Methods vs Idempotency)"
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:border-cyan-400 focus:outline-none"
-          />
-          <div>
-            <label className="block text-[11px] font-mono text-zinc-500 mb-1">
-              HEADERS (COMMA-SEPARATED)
-            </label>
-            <input
-              type="text"
-              value={rawHeaders}
-              onChange={(e) =>
-                updateData({
-                  headers: e.target.value
-                    .split(",")
-                    .map((h) => h.trim())
-                    .filter(Boolean),
-                })
-              }
-              placeholder="Method, Idempotent, Safe, Cacheable"
-              className="w-full font-mono rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:border-cyan-400 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] font-mono text-zinc-500 mb-1">
-              ROWS (ONE ROW PER LINE, CELLS SEPARATED BY |)
-            </label>
-            <textarea
-              rows={4}
-              value={rawRows}
-              onChange={(e) =>
-                updateData({
-                  rows: e.target.value
-                    .split("\n")
-                    .map((line) => line.split("|").map((c) => c.trim()))
-                    .filter((r) => r.some((cell) => cell.length > 0)),
-                })
-              }
-              placeholder={`GET | Yes | Yes | Yes\nPOST | No | No | Sometimes\nDELETE | Yes | No | No`}
-              className="w-full font-mono rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-xs text-zinc-300 placeholder-zinc-600 focus:border-cyan-400 focus:outline-none"
-            />
-          </div>
-        </div>
-      );
+      const data = (block.data || {}) as TableBlockData;
+      return <TableBlockEditor data={data} updateData={updateData} />;
     }
 
     case "note":
@@ -942,5 +913,204 @@ function getBlockPreviewSummary(block: DevVaultBlock): string {
   if (block.type === "concept") return String(d.title || "");
   if (block.type === "step") return `Step ${d.stepNumber || 1}: ${String(d.title || "")}`;
   if (block.type === "image") return String(d.caption || d.url || "");
+  if (block.type === "table") return String(d.caption || "Data Table");
   return "";
 }
+
+// ==========================================
+// STRUCTURED DATA TABLE EDITOR
+// ==========================================
+
+function TableBlockEditor({
+  data,
+  updateData,
+}: {
+  data: TableBlockData;
+  updateData: (data: Record<string, unknown>) => void;
+}) {
+  const headers =
+    Array.isArray(data.headers) && data.headers.length > 0
+      ? data.headers
+      : ["Column 1", "Column 2"];
+  const rows =
+    Array.isArray(data.rows) && data.rows.length > 0
+      ? data.rows
+      : [new Array(headers.length).fill("")];
+
+  const handleHeaderChange = (colIdx: number, val: string) => {
+    const updated = [...headers];
+    updated[colIdx] = val;
+    updateData({ headers: updated });
+  };
+
+  const handleAddColumn = () => {
+    const updatedHeaders = [...headers, `Column ${headers.length + 1}`];
+    const updatedRows = rows.map((r) => [...r, ""]);
+    updateData({ headers: updatedHeaders, rows: updatedRows });
+  };
+
+  const handleRemoveColumn = (colIdx: number) => {
+    if (headers.length <= 1) return;
+    const updatedHeaders = headers.filter((_, i) => i !== colIdx);
+    const updatedRows = rows.map((r) => r.filter((_, i) => i !== colIdx));
+    updateData({ headers: updatedHeaders, rows: updatedRows });
+  };
+
+  const handleCellChange = (rowIdx: number, colIdx: number, val: string) => {
+    const updatedRows = rows.map((r, rIndex) => {
+      if (rIndex !== rowIdx) return r;
+      const newRow = [...r];
+      while (newRow.length < headers.length) {
+        newRow.push("");
+      }
+      newRow[colIdx] = val;
+      return newRow;
+    });
+    updateData({ rows: updatedRows });
+  };
+
+  const handleAddRow = () => {
+    const newRow = new Array(headers.length).fill("");
+    updateData({ rows: [...rows, newRow] });
+  };
+
+  const handleRemoveRow = (rowIdx: number) => {
+    if (rows.length <= 1) {
+      updateData({ rows: [new Array(headers.length).fill("")] });
+      return;
+    }
+    const updatedRows = rows.filter((_, i) => i !== rowIdx);
+    updateData({ rows: updatedRows });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-[11px] font-mono text-zinc-400 mb-1">
+          TABLE CAPTION / TITLE (OPTIONAL)
+        </label>
+        <input
+          type="text"
+          value={data.caption || ""}
+          onChange={(e) => updateData({ caption: e.target.value })}
+          placeholder="e.g. HTTP Methods vs Idempotency & Safety"
+          className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:border-cyan-400 focus:outline-none"
+        />
+      </div>
+
+      <div className="rounded-2xl border border-zinc-800 bg-black/50 p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/80 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
+              Structured Table Matrix
+            </span>
+            <span className="text-[11px] font-mono text-zinc-500">
+              ({headers.length} cols × {rows.length} rows)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAddColumn}
+              className="inline-flex items-center gap-1 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-mono font-semibold text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-500/50 transition cursor-pointer"
+            >
+              <span>+</span>
+              <span>Add Column</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleAddRow}
+              className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-[11px] font-mono font-semibold text-zinc-300 hover:text-white hover:border-zinc-600 transition cursor-pointer"
+            >
+              <span>+</span>
+              <span>Add Row</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-zinc-800 bg-zinc-900/80">
+                <th className="w-10 px-3 py-2 text-center font-mono text-[10px] text-zinc-500 uppercase select-none">
+                  #
+                </th>
+                {headers.map((h, colIdx) => (
+                  <th key={colIdx} className="px-2 py-2 min-w-[140px]">
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        value={h}
+                        onChange={(e) => handleHeaderChange(colIdx, e.target.value)}
+                        placeholder={`Column ${colIdx + 1}`}
+                        className="w-full rounded-lg border border-zinc-700/80 bg-zinc-900 px-2.5 py-1 text-xs font-bold text-white placeholder-zinc-500 focus:border-cyan-400 focus:outline-none"
+                      />
+                      {headers.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveColumn(colIdx)}
+                          className="h-6 w-6 rounded flex items-center justify-center text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition text-xs cursor-pointer"
+                          title="Delete column"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </th>
+                ))}
+                <th className="w-10 px-2 py-2 text-center font-mono text-[10px] text-zinc-500 select-none">
+                  Del
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/60">
+              {rows.map((row, rowIdx) => (
+                <tr key={rowIdx} className="hover:bg-zinc-900/30 transition">
+                  <td className="px-3 py-2 text-center font-mono text-[11px] text-zinc-500 select-none">
+                    {rowIdx + 1}
+                  </td>
+                  {headers.map((_, colIdx) => (
+                    <td key={colIdx} className="px-2 py-1.5">
+                      <input
+                        type="text"
+                        value={row[colIdx] || ""}
+                        onChange={(e) => handleCellChange(rowIdx, colIdx, e.target.value)}
+                        placeholder="Cell value (commas allowed)..."
+                        className="w-full rounded-lg border border-zinc-800 bg-zinc-900/70 px-2.5 py-1.5 text-xs text-zinc-200 placeholder-zinc-700 focus:border-cyan-400 focus:bg-zinc-900 focus:outline-none"
+                      />
+                    </td>
+                  ))}
+                  <td className="px-2 py-1.5 text-center">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveRow(rowIdx)}
+                      className="h-6 w-6 rounded inline-flex items-center justify-center text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition text-xs cursor-pointer"
+                      title="Delete row"
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500 pt-1">
+          <span>
+            Tip: Commas, quotes, and punctuation inside cell values are preserved cleanly.
+          </span>
+          <button
+            type="button"
+            onClick={handleAddRow}
+            className="text-cyan-400 hover:underline cursor-pointer"
+          >
+            + Add another row
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+

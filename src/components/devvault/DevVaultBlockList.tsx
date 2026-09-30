@@ -20,8 +20,20 @@ export default function DevVaultBlockList({
   blocks,
   onChange,
 }: DevVaultBlockListProps) {
-  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [activePickerLocation, setActivePickerLocation] = useState<"top" | "bottom" | number | null>(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+
+  const openAddMenuAtTop = () => {
+    setActivePickerLocation((prev) => (prev === "top" ? null : "top"));
+  };
+
+  const openAddMenuAtEnd = () => {
+    setActivePickerLocation((prev) => (prev === "bottom" ? null : "bottom"));
+  };
+
+  const openAddMenuAfter = (index: number) => {
+    setActivePickerLocation((prev) => (prev === index ? null : index));
+  };
 
   const addBlock = (type: DevVaultBlockType) => {
     const newBlock: DevVaultBlock = {
@@ -29,8 +41,33 @@ export default function DevVaultBlockList({
       type,
       data: getDefaultDataForType(type),
     };
-    onChange([...blocks, newBlock]);
-    setShowAddMenu(false);
+
+    let newBlocks: DevVaultBlock[];
+    if (activePickerLocation === "top") {
+      newBlocks = [newBlock, ...blocks];
+    } else if (
+      typeof activePickerLocation === "number" &&
+      activePickerLocation >= 0 &&
+      activePickerLocation < blocks.length
+    ) {
+      const copy = [...blocks];
+      copy.splice(activePickerLocation + 1, 0, newBlock);
+      newBlocks = copy;
+    } else {
+      newBlocks = [...blocks, newBlock];
+    }
+
+    onChange(newBlocks);
+    setActivePickerLocation(null);
+
+    if (typeof window !== "undefined") {
+      setTimeout(() => {
+        const el = document.getElementById(`devvault-block-${newBlock.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }, 60);
+    }
   };
 
   const updateBlock = (index: number, updatedBlock: DevVaultBlock) => {
@@ -108,176 +145,23 @@ export default function DevVaultBlockList({
 
           <button
             type="button"
-            onClick={() => setShowAddMenu(!showAddMenu)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-400 px-3.5 py-1.5 text-xs font-bold text-black transition hover:bg-cyan-300"
+            onClick={openAddMenuAtTop}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-400 px-3.5 py-1.5 text-xs font-bold text-black transition hover:bg-cyan-300 active:scale-95 cursor-pointer"
           >
-            <span>+</span>
-            <span>Add Block</span>
+            <span>{activePickerLocation === "top" ? "✕" : "+"}</span>
+            <span>{activePickerLocation === "top" ? "Cancel" : "Add Block"}</span>
           </button>
         </div>
       </div>
 
-      {/* Block Choice Selector Menu */}
-      {showAddMenu && (
-        <div className="rounded-3xl border border-cyan-500/40 bg-zinc-950 p-5 shadow-2xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-            <span className="text-xs font-mono uppercase tracking-wider text-cyan-400 font-bold">
-              Choose Section / Block Type
-            </span>
-            <button
-              type="button"
-              onClick={() => setShowAddMenu(false)}
-              className="text-xs text-zinc-500 hover:text-white"
-            >
-              ✕ Close
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Category: Text */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-mono uppercase text-zinc-500 font-semibold block">
-                Text & Typography
-              </span>
-              <div className="space-y-1">
-                <BlockAddButton
-                  icon="#"
-                  label="Heading"
-                  desc="H2, H3, or H4 section title"
-                  onClick={() => addBlock("heading")}
-                />
-                <BlockAddButton
-                  icon="¶"
-                  label="Paragraph"
-                  desc="Core technical narrative"
-                  onClick={() => addBlock("paragraph")}
-                />
-                <BlockAddButton
-                  icon="“"
-                  label="Quote"
-                  desc="Notable quote or principle"
-                  onClick={() => addBlock("quote")}
-                />
-              </div>
-            </div>
-
-            {/* Category: Technical */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-mono uppercase text-amber-500 font-semibold block">
-                Technical & Code
-              </span>
-              <div className="space-y-1">
-                <BlockAddButton
-                  icon="💻"
-                  label="Code Block"
-                  desc="Syntax-highlighted code"
-                  onClick={() => addBlock("code")}
-                />
-                <BlockAddButton
-                  icon="$"
-                  label="Command"
-                  desc="One-click CLI execution"
-                  onClick={() => addBlock("command")}
-                />
-                <BlockAddButton
-                  icon="⌨️"
-                  label="Terminal"
-                  desc="Console output logs"
-                  onClick={() => addBlock("terminal")}
-                />
-                <BlockAddButton
-                  icon="▦"
-                  label="Data Table"
-                  desc="Structured rows & columns"
-                  onClick={() => addBlock("table")}
-                />
-              </div>
-            </div>
-
-            {/* Category: Educational */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-mono uppercase text-emerald-500 font-semibold block">
-                Educational Callouts
-              </span>
-              <div className="space-y-1">
-                <BlockAddButton
-                  icon="🧠"
-                  label="Core Concept"
-                  desc="Mental model & analogies"
-                  onClick={() => addBlock("concept")}
-                />
-                <BlockAddButton
-                  icon="📖"
-                  label="Definition"
-                  desc="Strict technical definition"
-                  onClick={() => addBlock("definition")}
-                />
-                <BlockAddButton
-                  icon="🔢"
-                  label="Numbered Step"
-                  desc="Hands-on walkthrough step"
-                  onClick={() => addBlock("step")}
-                />
-                <BlockAddButton
-                  icon="💡"
-                  label="Pro Tip"
-                  desc="Best practices & wisdom"
-                  onClick={() => addBlock("tip")}
-                />
-                <BlockAddButton
-                  icon="⚠️"
-                  label="Warning"
-                  desc="Common bugs & pitfalls"
-                  onClick={() => addBlock("warning")}
-                />
-                <BlockAddButton
-                  icon="☑️"
-                  label="Checklist"
-                  desc="Requirements or verification"
-                  onClick={() => addBlock("checklist")}
-                />
-              </div>
-            </div>
-
-            {/* Category: Media & Reference */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-mono uppercase text-purple-400 font-semibold block">
-                Media & Links
-              </span>
-              <div className="space-y-1">
-                <BlockAddButton
-                  icon="🖼️"
-                  label="Diagram / Image"
-                  desc="Cloudinary diagram upload"
-                  onClick={() => addBlock("image")}
-                />
-                <BlockAddButton
-                  icon="🗂️"
-                  label="Image Gallery"
-                  desc="Multiple circuit/UI shots"
-                  onClick={() => addBlock("gallery")}
-                />
-                <BlockAddButton
-                  icon="🔗"
-                  label="External Link"
-                  desc="Official docs or repos"
-                  onClick={() => addBlock("link")}
-                />
-                <BlockAddButton
-                  icon="📚"
-                  label="Citation"
-                  desc="Paper or RFC reference"
-                  onClick={() => addBlock("reference")}
-                />
-                <BlockAddButton
-                  icon="M↓"
-                  label="Markdown"
-                  desc="Freeform markdown text"
-                  onClick={() => addBlock("markdown")}
-                />
-              </div>
-            </div>
-          </div>
+      {/* Inline Block Picker at Top */}
+      {activePickerLocation === "top" && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-150">
+          <InlineBlockPicker
+            onSelect={(type) => addBlock(type)}
+            onClose={() => setActivePickerLocation(null)}
+            title="Add Block at Beginning"
+          />
         </div>
       )}
 
@@ -301,38 +185,94 @@ export default function DevVaultBlockList({
             </button>
             <button
               type="button"
-              onClick={() => addBlock("heading")}
-              className="rounded-xl bg-cyan-400 px-4 py-2 text-xs font-bold text-black hover:bg-cyan-300 transition"
+              onClick={openAddMenuAtEnd}
+              className="rounded-xl bg-cyan-400 px-4 py-2 text-xs font-bold text-black hover:bg-cyan-300 transition cursor-pointer"
             >
               + Add First Block
             </button>
           </div>
+
+          {activePickerLocation === "bottom" && (
+            <div className="mt-6 text-left animate-in fade-in duration-150">
+              <InlineBlockPicker
+                onSelect={(type) => addBlock(type)}
+                onClose={() => setActivePickerLocation(null)}
+                title="Add First Block"
+              />
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
           {blocks.map((block, idx) => (
-            <DevVaultBlockEditor
-              key={block.id}
-              block={block}
-              index={idx}
-              totalBlocks={blocks.length}
-              onChange={(updated) => updateBlock(idx, updated)}
-              onMoveUp={() => moveBlock(idx, "up")}
-              onMoveDown={() => moveBlock(idx, "down")}
-              onDuplicate={() => duplicateBlock(idx)}
-              onDelete={() => deleteBlock(idx)}
-            />
+            <React.Fragment key={block.id}>
+              <div id={`devvault-block-${block.id}`}>
+                <DevVaultBlockEditor
+                  block={block}
+                  index={idx}
+                  totalBlocks={blocks.length}
+                  onChange={(updated) => updateBlock(idx, updated)}
+                  onMoveUp={() => moveBlock(idx, "up")}
+                  onMoveDown={() => moveBlock(idx, "down")}
+                  onDuplicate={() => duplicateBlock(idx)}
+                  onDelete={() => deleteBlock(idx)}
+                  onInsertBelow={() => openAddMenuAfter(idx)}
+                />
+              </div>
+
+              {/* In-between block insertion control */}
+              {idx < blocks.length - 1 && (
+                <div className="py-1">
+                  {activePickerLocation === idx ? (
+                    <div className="my-2 animate-in fade-in duration-150">
+                      <InlineBlockPicker
+                        onSelect={(type) => addBlock(type)}
+                        onClose={() => setActivePickerLocation(null)}
+                        title={`Insert Block Below Section #${idx + 1}`}
+                      />
+                    </div>
+                  ) : (
+                    <div className="group/divider relative py-1 flex items-center justify-center">
+                      <div className="absolute inset-x-0 h-px bg-zinc-800/40 group-hover/divider:bg-cyan-500/30 transition-colors" />
+                      <button
+                        type="button"
+                        onClick={() => openAddMenuAfter(idx)}
+                        className="relative z-10 flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950 px-3 py-0.5 text-[10px] font-mono text-zinc-500 opacity-40 hover:opacity-100 group-hover/divider:opacity-100 hover:border-cyan-500/40 hover:bg-zinc-900 hover:text-cyan-400 transition cursor-pointer shadow-sm"
+                        title={`Insert section between #${idx + 1} and #${idx + 2}`}
+                      >
+                        <span>+</span>
+                        <span>Insert Block Here</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </React.Fragment>
           ))}
 
-          {/* Quick inline "+ Add Next Block" button at bottom */}
-          <div className="pt-2 flex justify-center">
+          {/* Inline "+ Add Another Section Block" with small tab opening right above it */}
+          <div className="pt-4 flex flex-col items-center">
+            {activePickerLocation === "bottom" && (
+              <div className="w-full mb-3 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                <InlineBlockPicker
+                  onSelect={(type) => addBlock(type)}
+                  onClose={() => setActivePickerLocation(null)}
+                  title="Add Section Block"
+                />
+              </div>
+            )}
+
             <button
               type="button"
-              onClick={() => setShowAddMenu(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-5 py-2 text-xs font-semibold text-zinc-400 hover:border-cyan-500/50 hover:text-cyan-400 transition"
+              onClick={openAddMenuAtEnd}
+              className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-6 py-2.5 text-xs font-semibold text-zinc-300 hover:border-cyan-500/50 hover:text-cyan-400 hover:bg-zinc-900 transition cursor-pointer shadow-sm active:scale-95"
             >
-              <span>+</span>
-              <span>Add Another Section Block</span>
+              <span>{activePickerLocation === "bottom" ? "✕" : "+"}</span>
+              <span>
+                {activePickerLocation === "bottom"
+                  ? "Close Section Picker"
+                  : "Add Another Section Block"}
+              </span>
             </button>
           </div>
         </div>
@@ -406,33 +346,135 @@ export default function DevVaultBlockList({
   );
 }
 
-function BlockAddButton({
-  icon,
-  label,
-  desc,
-  onClick,
-}: {
+interface InlineBlockPickerProps {
+  onSelect: (type: DevVaultBlockType) => void;
+  onClose: () => void;
+  title?: string;
+}
+
+type BlockCategory = "all" | "text" | "code" | "callouts" | "media";
+
+const BLOCK_DEFINITIONS: Array<{
+  type: DevVaultBlockType;
   icon: string;
   label: string;
   desc: string;
-  onClick: () => void;
-}) {
+  category: "text" | "code" | "callouts" | "media";
+}> = [
+  // Text & Narrative
+  { type: "heading", icon: "#", label: "Heading", desc: "H2, H3, H4 section title", category: "text" },
+  { type: "paragraph", icon: "¶", label: "Paragraph", desc: "Core technical narrative", category: "text" },
+  { type: "quote", icon: "“", label: "Quote", desc: "Notable quote or axiom", category: "text" },
+  { type: "markdown", icon: "M↓", label: "Markdown", desc: "Freeform markdown text", category: "text" },
+
+  // Technical & Code
+  { type: "code", icon: "💻", label: "Code Block", desc: "Syntax-highlighted code", category: "code" },
+  { type: "command", icon: "$", label: "Command", desc: "One-click copy CLI", category: "code" },
+  { type: "terminal", icon: "⌨️", label: "Terminal", desc: "Console output display", category: "code" },
+  { type: "table", icon: "▦", label: "Data Table", desc: "Structured rows & columns", category: "code" },
+
+  // Educational Callouts
+  { type: "concept", icon: "🧠", label: "Core Concept", desc: "Mental models & analogies", category: "callouts" },
+  { type: "definition", icon: "📖", label: "Definition", desc: "Strict technical definition", category: "callouts" },
+  { type: "step", icon: "🔢", label: "Numbered Step", desc: "Hands-on walkthrough", category: "callouts" },
+  { type: "tip", icon: "💡", label: "Pro Tip", desc: "Best practices & wisdom", category: "callouts" },
+  { type: "warning", icon: "⚠️", label: "Warning", desc: "Common bugs & pitfalls", category: "callouts" },
+  { type: "note", icon: "📝", label: "Note", desc: "Contextual reminder", category: "callouts" },
+  { type: "important", icon: "🚨", label: "Important", desc: "Critical requirement", category: "callouts" },
+  { type: "checklist", icon: "☑️", label: "Checklist", desc: "Interactive verification", category: "callouts" },
+
+  // Media & References
+  { type: "image", icon: "🖼️", label: "Image / Diagram", desc: "Diagram or schematic", category: "media" },
+  { type: "gallery", icon: "🗂️", label: "Image Gallery", desc: "Multiple photos/diagrams", category: "media" },
+  { type: "link", icon: "🔗", label: "External Link", desc: "Official docs or repo", category: "media" },
+  { type: "reference", icon: "📚", label: "Citation", desc: "Paper or RFC reference", category: "media" },
+];
+
+function InlineBlockPicker({
+  onSelect,
+  onClose,
+  title = "Select Block Type",
+}: InlineBlockPickerProps) {
+  const [activeTab, setActiveTab] = useState<BlockCategory>("all");
+
+  const filteredBlocks =
+    activeTab === "all"
+      ? BLOCK_DEFINITIONS
+      : BLOCK_DEFINITIONS.filter((b) => b.category === activeTab);
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full text-left p-2 rounded-xl border border-transparent hover:border-zinc-800 hover:bg-zinc-900/60 transition group flex items-start gap-2.5"
-    >
-      <span className="h-6 w-6 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs font-mono group-hover:border-cyan-500/40 text-cyan-400">
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <span className="block text-xs font-bold text-zinc-200 group-hover:text-white">
-          {label}
-        </span>
-        <span className="block text-[10px] text-zinc-500 truncate">{desc}</span>
+    <div className="rounded-2xl border border-cyan-500/40 bg-zinc-950/95 p-3.5 sm:p-4 shadow-2xl backdrop-blur-md transition-all">
+      {/* Header bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/80 pb-2.5">
+        <div className="flex items-center gap-2">
+          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-cyan-400/10 text-cyan-400 text-xs font-bold">
+            +
+          </span>
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400">
+            {title}
+          </span>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex flex-wrap items-center gap-1">
+          {(
+            [
+              { key: "all", label: "All" },
+              { key: "text", label: "Text" },
+              { key: "code", label: "Code & Data" },
+              { key: "callouts", label: "Callouts" },
+              { key: "media", label: "Media" },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition cursor-pointer ${
+                activeTab === tab.key
+                  ? "bg-cyan-400 text-black font-semibold shadow-sm"
+                  : "bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-2 rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-400 hover:text-white transition cursor-pointer"
+            title="Cancel"
+          >
+            ✕ Close
+          </button>
+        </div>
       </div>
-    </button>
+
+      {/* Grid of block options */}
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-[280px] overflow-y-auto pr-1">
+        {filteredBlocks.map((block) => (
+          <button
+            key={block.type}
+            type="button"
+            onClick={() => onSelect(block.type)}
+            className="group flex items-start gap-2.5 rounded-xl border border-zinc-800/80 bg-zinc-900/50 p-2.5 text-left transition hover:border-cyan-500/50 hover:bg-zinc-900 hover:shadow-lg hover:shadow-cyan-950/30 cursor-pointer"
+          >
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-950 border border-zinc-800 text-sm font-mono text-cyan-400 group-hover:border-cyan-500/50 group-hover:scale-105 transition-transform">
+              {block.icon}
+            </span>
+            <div className="min-w-0 flex-1">
+              <span className="block text-xs font-bold text-zinc-200 group-hover:text-white truncate">
+                {block.label}
+              </span>
+              <span className="block text-[10px] text-zinc-500 truncate group-hover:text-zinc-400">
+                {block.desc}
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

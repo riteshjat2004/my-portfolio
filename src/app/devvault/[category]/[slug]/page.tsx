@@ -221,8 +221,10 @@ export default async function DevVaultTopicPage({ params }: PageProps) {
               </div>
             </header>
 
-            {/* Mobile TOC accordion */}
-            <DevVaultTOC blocks={content.content} />
+            {/* Mobile TOC accordion (strictly hidden on desktop) */}
+            <div className="block lg:hidden">
+              <DevVaultTOC blocks={content.content} variant="mobile" />
+            </div>
 
             {/* Structured Technical Blocks Renderer */}
             <div className="py-2">
@@ -291,7 +293,7 @@ export default async function DevVaultTopicPage({ params }: PageProps) {
 
           {/* Desktop Sticky Table of Contents Sidebar */}
           <div className="hidden lg:block lg:col-span-4 pl-4 border-l border-zinc-900">
-            <DevVaultTOC blocks={content.content} />
+            <DevVaultTOC blocks={content.content} variant="desktop" />
           </div>
         </div>
       </main>

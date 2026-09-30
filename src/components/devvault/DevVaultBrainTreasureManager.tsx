@@ -14,6 +14,7 @@ import {
   deleteDevVaultBrainTreasure,
   patchDevVaultBrainTreasureStatus,
 } from "@/api/devvaultApi";
+import DevVaultPopconfirm from "./DevVaultPopconfirm";
 
 interface DevVaultBrainTreasureManagerProps {
   onRefreshParent?: () => void;
@@ -155,23 +156,6 @@ export default function DevVaultBrainTreasureManager({
       setFeedback({ type: "error", message: msg });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleDelete = async (item: DevVaultBrainTreasure) => {
-    const formatted = `#${String(item.questionNumber).padStart(2, "0")}`;
-    if (!window.confirm(`Are you sure you want to delete question ${formatted} (${item.technicalBackground})?`)) {
-      return;
-    }
-
-    try {
-      await deleteDevVaultBrainTreasure(item._id);
-      setFeedback({ type: "success", message: `Question ${formatted} deleted.` });
-      await loadData();
-      if (onRefreshParent) onRefreshParent();
-    } catch (err) {
-      console.error("Failed to delete question:", err);
-      setFeedback({ type: "error", message: "Failed to delete question." });
     }
   };
 
@@ -577,13 +561,32 @@ export default function DevVaultBrainTreasureManager({
                       >
                         Edit
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item)}
-                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs text-red-400 hover:bg-red-500/20"
+                      <DevVaultPopconfirm
+                        title={`Delete Q#${String(item.questionNumber).padStart(2, "0")}?`}
+                        onConfirm={async () => {
+                          const formatted = `#${String(item.questionNumber).padStart(2, "0")}`;
+                          try {
+                            await deleteDevVaultBrainTreasure(item._id);
+                            setFeedback({ type: "success", message: `Question ${formatted} deleted.` });
+                            await loadData();
+                            if (onRefreshParent) onRefreshParent();
+                          } catch (err) {
+                            console.error("Failed to delete question:", err);
+                            setFeedback({ type: "error", message: "Failed to delete question." });
+                          }
+                        }}
+                        confirmLabel="Delete"
                       >
-                        Delete
-                      </button>
+                        {(openConfirm) => (
+                          <button
+                            type="button"
+                            onClick={openConfirm}
+                            className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs text-red-400 hover:bg-red-500/20 transition cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </DevVaultPopconfirm>
                     </div>
                   </td>
                 </tr>
