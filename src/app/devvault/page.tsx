@@ -4,7 +4,9 @@ import Footer from "@/sections/footer/Footer";
 import DevVaultHomeClient from "@/components/devvault/DevVaultHomeClient";
 import { DevVaultCategory, DevVaultContent, DevVaultBrainTreasure } from "@/types/devvault";
 
-export const dynamic = "force-dynamic";
+// Enable 30-second stale-while-revalidate caching so navigation is instant (<50ms)
+// while ensuring admin updates and new questions automatically sync within 30s.
+export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: "DevVault | Technical Knowledge Platform",
@@ -21,15 +23,16 @@ export const metadata: Metadata = {
   },
 };
 
+const getApiUrl = () =>
+  process.env.INTERNAL_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000/api";
+
 async function getCategories(): Promise<DevVaultCategory[]> {
   try {
-    const apiUrl =
-      process.env.INTERNAL_API_URL ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:5000/api";
-
-    const res = await fetch(`${apiUrl}/devvault/categories`, {
-      cache: "no-store",
+    const res = await fetch(`${getApiUrl()}/devvault/categories`, {
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(6000),
     });
 
     if (!res.ok) return [];
@@ -43,13 +46,9 @@ async function getCategories(): Promise<DevVaultCategory[]> {
 
 async function getFeaturedTopics(): Promise<DevVaultContent[]> {
   try {
-    const apiUrl =
-      process.env.INTERNAL_API_URL ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:5000/api";
-
-    const res = await fetch(`${apiUrl}/devvault/content?featured=true&limit=4`, {
-      cache: "no-store",
+    const res = await fetch(`${getApiUrl()}/devvault/content?featured=true&limit=4`, {
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(6000),
     });
 
     if (!res.ok) return [];
@@ -63,14 +62,10 @@ async function getFeaturedTopics(): Promise<DevVaultContent[]> {
 
 async function getRecentTopics(): Promise<DevVaultContent[]> {
   try {
-    const apiUrl =
-      process.env.INTERNAL_API_URL ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:5000/api";
-
     // Strictly fetch maximum 5 latest published topics from server
-    const res = await fetch(`${apiUrl}/devvault/content?limit=5&sort=newest`, {
-      cache: "no-store",
+    const res = await fetch(`${getApiUrl()}/devvault/content?limit=5&sort=newest`, {
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(6000),
     });
 
     if (!res.ok) return [];
@@ -84,14 +79,10 @@ async function getRecentTopics(): Promise<DevVaultContent[]> {
 
 async function getBrainTreasure(): Promise<{ items: DevVaultBrainTreasure[]; total: number }> {
   try {
-    const apiUrl =
-      process.env.INTERNAL_API_URL ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:5000/api";
-
     // Strictly fetch maximum 5 Brain Treasure questions for homepage preview
-    const res = await fetch(`${apiUrl}/devvault/brain-treasure?limit=5`, {
-      cache: "no-store",
+    const res = await fetch(`${getApiUrl()}/devvault/brain-treasure?limit=5`, {
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(6000),
     });
 
     if (!res.ok) return { items: [], total: 0 };
@@ -107,6 +98,7 @@ async function getBrainTreasure(): Promise<{ items: DevVaultBrainTreasure[]; tot
 }
 
 export default async function DevVaultPage() {
+  // Parallel execution of all 4 independent data queries
   const [categories, featuredTopics, recentTopics, brainTreasureData] = await Promise.all([
     getCategories(),
     getFeaturedTopics(),

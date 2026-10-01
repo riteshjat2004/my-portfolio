@@ -353,17 +353,24 @@ export default function DevVaultContentTable({
 
                       {/* Status */}
                       <td className="px-4 py-3.5 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStatus(item)}
-                          className={`rounded-full border px-2.5 py-0.5 text-[11px] font-mono transition ${
-                            item.status === "published"
-                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                              : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:text-white"
-                          }`}
-                        >
-                          {item.status === "published" ? "Published" : "Draft"}
-                        </button>
+                        <div className="flex flex-col items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(item)}
+                            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-mono transition ${
+                              item.status === "published"
+                                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                                : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:text-white"
+                            }`}
+                          >
+                            {item.status === "published" ? "Published" : "Draft"}
+                          </button>
+                          {item.status === "published" && item.hasDraft && (
+                            <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[9px] font-mono text-amber-300">
+                              Draft edits
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Visibility */}

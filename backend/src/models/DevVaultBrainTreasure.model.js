@@ -67,7 +67,6 @@ devVaultBrainTreasureSchema.index({
   createdAt: -1,
 });
 devVaultBrainTreasureSchema.index({ technicalBackground: 1 });
-devVaultBrainTreasureSchema.index({ difficulty: 1 });
 devVaultBrainTreasureSchema.index({ questionNumber: 1 });
 
 const DevVaultBrainTreasure = mongoose.model(

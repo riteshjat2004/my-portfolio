@@ -210,6 +210,8 @@ export interface DevVaultContent {
   ordering: number;
   readingTime?: number;
   author: string;
+  hasDraft?: boolean;
+  draft?: Partial<DevVaultContent> | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -11,7 +11,7 @@ import DevVaultTopicActionBar from "@/components/devvault/DevVaultTopicActionBar
 import { DevVaultCategory, DevVaultDetailResponse } from "@/types/devvault";
 import { formatDate } from "@/utils/readingTime";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 interface PageProps {
   params: Promise<{ category: string; slug: string }>;
@@ -25,7 +25,8 @@ async function getTopicData(slug: string): Promise<DevVaultDetailResponse | null
       "http://localhost:5000/api";
 
     const res = await fetch(`${apiUrl}/devvault/content/${slug}`, {
-      cache: "no-store",
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(6000),
     });
 
     if (!res.ok) {
@@ -115,6 +116,37 @@ export default async function DevVaultTopicPage({ params }: PageProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white selection:bg-cyan-500/20 selection:text-cyan-300">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @media print {
+              body, html, .min-h-screen {
+                background: #ffffff !important;
+                color: #0f172a !important;
+              }
+              nav, footer, .reading-progress, header div.flex.flex-wrap, .lg\\:col-span-4 {
+                display: none !important;
+              }
+              article {
+                width: 100% !important;
+                max-width: 100% !important;
+              }
+              h2, h3, h4 {
+                break-after: avoid !important;
+                page-break-after: avoid !important;
+                color: #0f172a !important;
+              }
+              .rounded-2xl, .rounded-3xl, pre, blockquote, table {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                background-color: #f8fafc !important;
+                color: #0f172a !important;
+                border-color: #e2e8f0 !important;
+              }
+            }
+          `,
+        }}
+      />
       <DevVaultReadingProgress />
       <Navbar />
 

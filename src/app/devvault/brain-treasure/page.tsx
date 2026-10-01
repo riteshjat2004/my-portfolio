@@ -4,7 +4,7 @@ import Footer from "@/sections/footer/Footer";
 import DevVaultBrainTreasureClient from "@/components/devvault/DevVaultBrainTreasureClient";
 import { DevVaultBrainTreasure } from "@/types/devvault";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: "Brain Treasure | Technical Challenges & Mental Models | DevVault",
@@ -33,7 +33,8 @@ async function getBrainTreasureData(): Promise<{
       "http://localhost:5000/api";
 
     const res = await fetch(`${apiUrl}/devvault/brain-treasure?limit=100`, {
-      cache: "no-store",
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(6000),
     });
 
     if (!res.ok) {

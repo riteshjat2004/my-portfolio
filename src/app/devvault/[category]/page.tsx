@@ -5,7 +5,7 @@ import Footer from "@/sections/footer/Footer";
 import DevVaultCategoryClient from "@/components/devvault/DevVaultCategoryClient";
 import { DevVaultCategory, DevVaultContent } from "@/types/devvault";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -22,8 +22,14 @@ async function getCategoryData(slug: string): Promise<{
       "http://localhost:5000/api";
 
     const [catRes, topicsRes] = await Promise.all([
-      fetch(`${apiUrl}/devvault/categories/${slug}`, { cache: "no-store" }),
-      fetch(`${apiUrl}/devvault/content?category=${slug}`, { cache: "no-store" }),
+      fetch(`${apiUrl}/devvault/categories/${slug}`, {
+        next: { revalidate: 30 },
+        signal: AbortSignal.timeout(6000),
+      }),
+      fetch(`${apiUrl}/devvault/content?category=${slug}`, {
+        next: { revalidate: 30 },
+        signal: AbortSignal.timeout(6000),
+      }),
     ]);
 
     if (!catRes.ok) {

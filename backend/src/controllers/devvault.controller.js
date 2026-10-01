@@ -684,14 +684,6 @@ export const updateContent = async (req, res) => {
       });
     }
 
-    // Save previous version to trash
-    await saveToTrash(
-      "devvault-content",
-      "edit",
-      existingContent._id,
-      existingContent.toObject()
-    );
-
     const {
       title,
       slug,
@@ -708,7 +700,146 @@ export const updateContent = async (req, res) => {
       ordering,
       readingTime,
       author,
+      action,
+      isDraftSave,
     } = req.body;
+
+    // 1. Action: Discard draft edits
+    if (action === "discard_draft") {
+      existingContent.hasDraft = false;
+      existingContent.draft = null;
+      await existingContent.save();
+      const updated = await DevVaultContent.findById(req.params.id)
+        .populate("category", "name slug icon")
+        .lean();
+      return res.status(200).json({
+        success: true,
+        message: "Draft edits discarded successfully",
+        content: updated,
+      });
+    }
+
+    // 2. Action: Save draft on an already-published topic
+    // If the topic is currently published and the user intends to save a working draft
+    const isSavingWorkingDraft =
+      existingContent.status === "published" &&
+      (isDraftSave === true ||
+        action === "save_draft" ||
+        (status === "draft" && action !== "unpublish"));
+
+    if (isSavingWorkingDraft) {
+      // Validate category if provided
+      let targetCategory = existingContent.category;
+      if (category) {
+        if (!mongoose.Types.ObjectId.isValid(category)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid category ID format",
+          });
+        }
+        const catDoc = await DevVaultCategory.findById(category);
+        if (!catDoc) {
+          return res.status(400).json({
+            success: false,
+            message: "Referenced category does not exist",
+          });
+        }
+        targetCategory = category;
+      }
+
+      // Validate slug if provided
+      let targetSlug = existingContent.slug;
+      if (slug) {
+        const newSlug = slugify(slug);
+        if (newSlug !== existingContent.slug) {
+          const duplicate = await DevVaultContent.findOne({
+            slug: newSlug,
+            _id: { $ne: existingContent._id },
+          });
+          if (duplicate) {
+            return res.status(400).json({
+              success: false,
+              message: `Content with slug '${newSlug}' already exists`,
+            });
+          }
+          targetSlug = newSlug;
+        }
+      }
+
+      const draftPayload = {
+        title: title !== undefined ? title.trim() : existingContent.title,
+        slug: targetSlug,
+        shortDescription:
+          shortDescription !== undefined
+            ? shortDescription.trim()
+            : existingContent.shortDescription,
+        category: targetCategory,
+        tags:
+          tags !== undefined
+            ? Array.isArray(tags)
+              ? tags.map((t) => t.trim().toLowerCase()).filter(Boolean)
+              : []
+            : existingContent.tags,
+        contentType:
+          contentType !== undefined
+            ? contentType.trim()
+            : existingContent.contentType,
+        difficulty:
+          difficulty !== undefined
+            ? ["beginner", "intermediate", "advanced"].includes(
+                String(difficulty).toLowerCase()
+              )
+              ? String(difficulty).toLowerCase()
+              : "intermediate"
+            : existingContent.difficulty,
+        visibility:
+          visibility !== undefined
+            ? visibility === "hidden"
+              ? "hidden"
+              : "visible"
+            : existingContent.visibility,
+        featured:
+          featured !== undefined ? Boolean(featured) : existingContent.featured,
+        coverImage:
+          coverImage !== undefined
+            ? coverImage.trim()
+            : existingContent.coverImage,
+        content: content !== undefined ? content : existingContent.content,
+        ordering:
+          ordering !== undefined
+            ? Number(ordering) || 0
+            : existingContent.ordering,
+        readingTime:
+          readingTime !== undefined
+            ? Math.max(1, Number(readingTime) || 5)
+            : existingContent.readingTime,
+        author: author !== undefined ? author.trim() : existingContent.author,
+        updatedAt: new Date(),
+      };
+
+      existingContent.hasDraft = true;
+      existingContent.draft = draftPayload;
+      await existingContent.save();
+
+      const updated = await DevVaultContent.findById(req.params.id)
+        .populate("category", "name slug icon")
+        .lean();
+
+      return res.status(200).json({
+        success: true,
+        message: "Draft saved. Published version remains live on the website.",
+        content: updated,
+      });
+    }
+
+    // 3. Publishing or standard update
+    // Save previous version to trash before applying live updates
+    await saveToTrash(
+      "devvault-content",
+      "edit",
+      existingContent._id,
+      existingContent.toObject()
+    );
 
     const updates = {};
     if (title !== undefined) updates.title = title.trim();
@@ -721,7 +852,18 @@ export const updateContent = async (req, res) => {
         ? String(difficulty).toLowerCase()
         : "intermediate";
     }
-    if (status !== undefined) updates.status = status === "published" ? "published" : "draft";
+    if (action === "unpublish") {
+      updates.status = "draft";
+    } else if (action === "publish_draft" || status === "published") {
+      updates.status = "published";
+      updates.hasDraft = false;
+      updates.draft = null;
+    } else if (status !== undefined) {
+      updates.status = status === "published" ? "published" : "draft";
+      updates.hasDraft = false;
+      updates.draft = null;
+    }
+
     if (visibility !== undefined) updates.visibility = visibility === "hidden" ? "hidden" : "visible";
     if (featured !== undefined) updates.featured = Boolean(featured);
     if (coverImage !== undefined) updates.coverImage = coverImage.trim();
@@ -776,10 +918,11 @@ export const updateContent = async (req, res) => {
       req.params.id,
       { $set: updates },
       { new: true, runValidators: true }
-    );
+    ).populate("category", "name slug icon");
 
     res.status(200).json({
       success: true,
+      message: updates.status === "published" ? "Published successfully!" : "Updated successfully!",
       content: updated,
     });
   } catch (error) {

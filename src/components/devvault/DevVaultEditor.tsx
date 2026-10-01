@@ -9,7 +9,11 @@ import {
   DevVaultStatus,
   DevVaultVisibility,
 } from "@/types/devvault";
-import { createDevVaultContent, updateDevVaultContent } from "@/api/devvaultApi";
+import {
+  createDevVaultContent,
+  updateDevVaultContent,
+  discardDevVaultDraft,
+} from "@/api/devvaultApi";
 import { slugify } from "@/utils/slugify";
 import DevVaultBlockList from "./DevVaultBlockList";
 import DevVaultBlockRenderer from "./DevVaultBlockRenderer";
@@ -44,6 +48,17 @@ export default function DevVaultEditor({
   onSaveSuccess,
   onCancel,
 }: DevVaultEditorProps) {
+  // If the published article has a pending working draft, load the draft edits into the editor
+  const workingSource =
+    initialContent?.hasDraft && initialContent?.draft
+      ? ({ ...initialContent, ...initialContent.draft } as DevVaultContent)
+      : initialContent;
+
+  const isOriginallyPublished = initialContent?.status === "published";
+  const [hasWorkingDraft, setHasWorkingDraft] = useState<boolean>(
+    Boolean(initialContent?.status === "published" && initialContent?.hasDraft)
+  );
+
   // Mode: "edit" | "preview" | "split"
   const [viewMode, setViewMode] = useState<"edit" | "preview" | "split">("edit");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,38 +66,39 @@ export default function DevVaultEditor({
   const [autoSlug, setAutoSlug] = useState(!initialContent);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Form states
-  const [title, setTitle] = useState(initialContent?.title || "");
-  const [slug, setSlug] = useState(initialContent?.slug || "");
-  const [shortDescription, setShortDescription] = useState(initialContent?.shortDescription || "");
+  // Form states initialized from workingSource
+  const [title, setTitle] = useState(workingSource?.title || "");
+  const [slug, setSlug] = useState(workingSource?.slug || "");
+  const [shortDescription, setShortDescription] = useState(workingSource?.shortDescription || "");
   const [category, setCategory] = useState<string>(() => {
-    if (!initialContent?.category) {
+    if (!workingSource?.category) {
       return categories[0]?._id || "";
     }
-    return typeof initialContent.category === "object"
-      ? (initialContent.category as DevVaultCategory)._id
-      : initialContent.category;
+    return typeof workingSource.category === "object"
+      ? (workingSource.category as DevVaultCategory)._id
+      : workingSource.category;
   });
-  const [contentType, setContentType] = useState(initialContent?.contentType || "article");
-  const [difficulty, setDifficulty] = useState<DevVaultDifficulty>(initialContent?.difficulty || "intermediate");
-  const [tagsInput, setTagsInput] = useState((initialContent?.tags || []).join(", "));
+  const [contentType, setContentType] = useState(workingSource?.contentType || "article");
+  const [difficulty, setDifficulty] = useState<DevVaultDifficulty>(workingSource?.difficulty || "intermediate");
+  const [tagsInput, setTagsInput] = useState((workingSource?.tags || []).join(", "));
   const [status, setStatus] = useState<DevVaultStatus>(initialContent?.status || "draft");
-  const [visibility, setVisibility] = useState<DevVaultVisibility>(initialContent?.visibility || "visible");
-  const [featured, setFeatured] = useState<boolean>(Boolean(initialContent?.featured));
-  const [ordering, setOrdering] = useState<number>(initialContent?.ordering || 0);
-  const [readingTime, setReadingTime] = useState<number>(initialContent?.readingTime || 5);
-  const [coverImage, setCoverImage] = useState<string>(initialContent?.coverImage || "");
+  const [visibility, setVisibility] = useState<DevVaultVisibility>(workingSource?.visibility || "visible");
+  const [featured, setFeatured] = useState<boolean>(Boolean(workingSource?.featured));
+  const [ordering, setOrdering] = useState<number>(workingSource?.ordering || 0);
+  const [readingTime, setReadingTime] = useState<number>(workingSource?.readingTime || 5);
+  const [coverImage, setCoverImage] = useState<string>(workingSource?.coverImage || "");
 
   // Content blocks
   const [blocks, setBlocks] = useState<DevVaultBlock[]>(() => {
-    if (!initialContent?.content) return [];
-    if (Array.isArray(initialContent.content)) return initialContent.content;
-    if (typeof initialContent.content === "string") {
+    const rawContent = workingSource?.content;
+    if (!rawContent) return [];
+    if (Array.isArray(rawContent)) return rawContent as DevVaultBlock[];
+    if (typeof rawContent === "string") {
       return [
         {
           id: "legacy-1",
           type: "markdown",
-          data: { markdown: initialContent.content },
+          data: { markdown: rawContent },
         },
       ];
     }
@@ -121,13 +137,14 @@ export default function DevVaultEditor({
         return;
       }
 
+      const isDraftSave = explicitStatus === "draft";
       const finalStatus = explicitStatus || status;
       const parsedTags = tagsInput
         .split(",")
         .map((t) => t.trim().toLowerCase())
         .filter(Boolean);
 
-      const payload: Partial<DevVaultContent> = {
+      const payload: Partial<DevVaultContent> & { action?: string; isDraftSave?: boolean } = {
         title: title.trim(),
         slug: slug.trim() || slugify(title),
         shortDescription: shortDescription.trim(),
@@ -135,7 +152,7 @@ export default function DevVaultEditor({
         contentType,
         difficulty,
         tags: parsedTags,
-        status: finalStatus,
+        status: isOriginallyPublished && isDraftSave ? "published" : finalStatus,
         visibility,
         featured,
         ordering: Number(ordering) || 0,
@@ -144,6 +161,16 @@ export default function DevVaultEditor({
         content: blocks,
       };
 
+      if (isOriginallyPublished) {
+        if (isDraftSave) {
+          payload.action = "save_draft";
+          payload.isDraftSave = true;
+        } else {
+          payload.action = "publish_draft";
+          payload.status = "published";
+        }
+      }
+
       try {
         setIsSubmitting(true);
         setFeedback(null);
@@ -151,7 +178,24 @@ export default function DevVaultEditor({
         let savedContent: DevVaultContent;
         if (initialContent?._id) {
           savedContent = await updateDevVaultContent(initialContent._id, payload);
-          setFeedback({ type: "success", message: "Topic updated successfully!" });
+          if (isOriginallyPublished && isDraftSave) {
+            setHasWorkingDraft(true);
+            setHasUnsavedChanges(false);
+            setFeedback({
+              type: "success",
+              message:
+                "Draft edits saved! The previously published version remains live on the website. Click 'Update Published' when you are ready to make these changes live.",
+            });
+            return;
+          } else {
+            setHasWorkingDraft(false);
+            setFeedback({
+              type: "success",
+              message: isOriginallyPublished
+                ? "Topic updated and published live successfully!"
+                : "Topic updated successfully!",
+            });
+          }
         } else {
           savedContent = await createDevVaultContent(payload);
           setFeedback({ type: "success", message: "Topic created successfully!" });
@@ -187,9 +231,74 @@ export default function DevVaultEditor({
       coverImage,
       blocks,
       initialContent,
+      isOriginallyPublished,
       onSaveSuccess,
     ]
   );
+
+  const handleDiscardDraft = async () => {
+    if (!initialContent?._id) return;
+    if (
+      !confirm(
+        "Are you sure you want to discard your saved draft edits? The editor will revert to the live published version."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setFeedback(null);
+      const reverted = await discardDevVaultDraft(initialContent._id);
+
+      setTitle(reverted.title || "");
+      setSlug(reverted.slug || "");
+      setShortDescription(reverted.shortDescription || "");
+      setCategory(
+        typeof reverted.category === "object"
+          ? (reverted.category as DevVaultCategory)._id
+          : reverted.category || categories[0]?._id || ""
+      );
+      setContentType(reverted.contentType || "article");
+      setDifficulty(reverted.difficulty || "intermediate");
+      setTagsInput((reverted.tags || []).join(", "));
+      setStatus(reverted.status || "published");
+      setVisibility(reverted.visibility || "visible");
+      setFeatured(Boolean(reverted.featured));
+      setOrdering(reverted.ordering || 0);
+      setReadingTime(reverted.readingTime || 5);
+      setCoverImage(reverted.coverImage || "");
+
+      if (Array.isArray(reverted.content)) {
+        setBlocks(reverted.content as DevVaultBlock[]);
+      } else if (typeof reverted.content === "string") {
+        setBlocks([
+          {
+            id: "legacy-1",
+            type: "markdown",
+            data: { markdown: reverted.content },
+          },
+        ]);
+      } else {
+        setBlocks([]);
+      }
+
+      setHasWorkingDraft(false);
+      setHasUnsavedChanges(false);
+      setFeedback({
+        type: "success",
+        message: "Draft edits discarded. Editor reverted to the live published version.",
+      });
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ||
+        (err instanceof Error ? err.message : "Failed to discard draft.");
+      setFeedback({ type: "error", message: errorMsg });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Keyboard shortcut: Ctrl + S / Cmd + S to save
   useEffect(() => {
@@ -300,10 +409,10 @@ export default function DevVaultEditor({
             onClick={() => handleSave("draft")}
             className="rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-zinc-300 hover:border-zinc-500 hover:text-white transition disabled:opacity-50"
           >
-            Save Draft
+            {isSubmitting ? "Saving..." : "Save Draft"}
           </button>
 
-          {/* Publish Button */}
+          {/* Publish / Update Published Button */}
           <button
             type="button"
             disabled={isSubmitting}
@@ -312,12 +421,38 @@ export default function DevVaultEditor({
           >
             {isSubmitting
               ? "Saving..."
-              : status === "published"
+              : isOriginallyPublished
               ? "Update Published"
               : "🚀 Publish"}
           </button>
         </div>
       </div>
+
+      {/* Working Draft Alert Banner */}
+      {isOriginallyPublished && hasWorkingDraft && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-amber-200">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+            <div>
+              <span className="font-bold text-amber-300">
+                Working Draft in Progress:
+              </span>{" "}
+              The previous version is still live on the website. Your draft
+              edits are saved without unpublishing. When you are ready to make
+              these edits live, click{" "}
+              <strong className="text-white underline">Update Published</strong>.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleDiscardDraft}
+            disabled={isSubmitting}
+            className="rounded-lg border border-amber-500/30 bg-zinc-900/80 px-2.5 py-1 text-[11px] font-mono text-zinc-300 hover:text-red-400 hover:border-red-500/50 transition disabled:opacity-50 shrink-0 self-start sm:self-auto"
+          >
+            Discard Draft Edits
+          </button>
+        </div>
+      )}
 
       {/* Feedback Banner */}
       {feedback && (

@@ -96,6 +96,16 @@ const devVaultContentSchema = new mongoose.Schema(
       default: "Ritesh Jat",
       trim: true,
     },
+
+    hasDraft: {
+      type: Boolean,
+      default: false,
+    },
+
+    draft: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
   },
   {
     timestamps: true,

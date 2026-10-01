@@ -114,9 +114,18 @@ export const createDevVaultContent = async (
 
 export const updateDevVaultContent = async (
   id: string,
-  data: Partial<DevVaultContent>
+  data: Partial<DevVaultContent> & { action?: string; isDraftSave?: boolean }
 ): Promise<DevVaultContent> => {
   const response = await api.put(`/devvault/admin/content/${id}`, data);
+  return response.data.content;
+};
+
+export const discardDevVaultDraft = async (
+  id: string
+): Promise<DevVaultContent> => {
+  const response = await api.put(`/devvault/admin/content/${id}`, {
+    action: "discard_draft",
+  });
   return response.data.content;
 };
 
