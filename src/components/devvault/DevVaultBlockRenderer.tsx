@@ -24,6 +24,8 @@ import {
 } from "@/types/devvault";
 import DevVaultLightbox, { LightboxImage } from "./DevVaultLightbox";
 import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import remarkGfm from "remark-gfm";
 
 interface DevVaultBlockRendererProps {
   blocks?: DevVaultBlock[] | string | Record<string, unknown> | null;
@@ -53,6 +55,35 @@ export function DevVaultProseText({
   );
 }
 
+function DevVaultMarkdown({ markdown }: { markdown: string }) {
+  return (
+    <div className="devvault-markdown">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHighlight]}
+        components={{
+          a: ({ href, children }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              {children}
+            </a>
+          ),
+          input: ({ checked }) => (
+            <input
+              type="checkbox"
+              checked={Boolean(checked)}
+              readOnly
+              tabIndex={-1}
+              aria-label={checked ? "Completed task" : "Incomplete task"}
+            />
+          ),
+        }}
+      >
+        {markdown}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 export default function DevVaultBlockRenderer({
   blocks,
   interactive = true,
@@ -79,9 +110,7 @@ export default function DevVaultBlockRenderer({
   // If content is a raw string (e.g. legacy markdown or plain text)
   if (typeof blocks === "string") {
     return (
-      <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-        {blocks}
-      </div>
+      <DevVaultMarkdown markdown={blocks} />
     );
   }
 
@@ -516,65 +545,7 @@ function SingleBlockRenderer({
     case "markdown": {
       const data = (block.data || {}) as MarkdownBlockData;
       return (
-        <div className="my-4 font-sans text-sm sm:text-base text-zinc-300 leading-relaxed rounded-xl border border-zinc-800 bg-zinc-950/50 p-5">
-          <ReactMarkdown
-            components={{
-              h1: ({ children }) => (
-                <h3 className="text-xl font-bold text-white mb-3 mt-4 border-b border-zinc-800 pb-1 break-words">
-                  {children}
-                </h3>
-              ),
-              h2: ({ children }) => (
-                <h4 className="text-lg font-bold text-white mb-2 mt-3 break-words">
-                  {children}
-                </h4>
-              ),
-              h3: ({ children }) => (
-                <h5 className="text-base font-semibold text-white mb-2 mt-2 break-words">
-                  {children}
-                </h5>
-              ),
-              p: ({ children }) => (
-                <p className="mb-3 leading-relaxed text-zinc-300 last:mb-0 break-words">
-                  {children}
-                </p>
-              ),
-              ul: ({ children }) => (
-                <ul className="mb-3 list-disc pl-5 space-y-1 text-zinc-300">
-                  {children}
-                </ul>
-              ),
-              ol: ({ children }) => (
-                <ol className="mb-3 list-decimal pl-5 space-y-1 text-zinc-300">
-                  {children}
-                </ol>
-              ),
-              li: ({ children }) => (
-                <li className="leading-relaxed">{children}</li>
-              ),
-              code: ({ children }) => (
-                <code className="rounded bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 font-mono text-xs text-cyan-300">
-                  {children}
-                </code>
-              ),
-              strong: ({ children }) => (
-                <strong className="font-semibold text-white">{children}</strong>
-              ),
-              a: ({ href, children }) => (
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-cyan-400 underline hover:text-cyan-300"
-                >
-                  {children}
-                </a>
-              ),
-            }}
-          >
-            {data.markdown || ""}
-          </ReactMarkdown>
-        </div>
+        <DevVaultMarkdown markdown={data.markdown || ""} />
       );
     }
 

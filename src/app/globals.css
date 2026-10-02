@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "highlight.js/styles/github-dark.css";
 
 :root {
   --background: #ffffff;
@@ -32,4 +33,205 @@ body {
 
 html {
   scroll-behavior: smooth;
+}
+
+.devvault-markdown {
+  margin-block: 1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  border: 1px solid #27272a;
+  border-radius: 0.875rem;
+  background: rgb(9 9 11 / 0.72);
+  padding: clamp(1rem, 3vw, 2rem);
+  color: #d4d4d8;
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.devvault-markdown > :first-child {
+  margin-top: 0;
+}
+
+.devvault-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.devvault-markdown h1,
+.devvault-markdown h2,
+.devvault-markdown h3,
+.devvault-markdown h4,
+.devvault-markdown h5,
+.devvault-markdown h6 {
+  margin-block: 1.8em 0.65em;
+  color: #fafafa;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+
+.devvault-markdown h1 {
+  border-bottom: 1px solid #3f3f46;
+  padding-bottom: 0.45em;
+  font-size: clamp(1.8rem, 4vw, 2.25rem);
+}
+
+.devvault-markdown h2 {
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 0.35em;
+  font-size: clamp(1.5rem, 3vw, 1.8rem);
+}
+
+.devvault-markdown h3 {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+}
+
+.devvault-markdown h4 {
+  font-size: 1.2rem;
+}
+
+.devvault-markdown h5,
+.devvault-markdown h6 {
+  font-size: 1.05rem;
+}
+
+.devvault-markdown p {
+  margin-block: 1em;
+}
+
+.devvault-markdown ul,
+.devvault-markdown ol {
+  margin-block: 1em;
+  padding-left: 1.75rem;
+}
+
+.devvault-markdown ul {
+  list-style: disc;
+}
+
+.devvault-markdown ol {
+  list-style: decimal;
+}
+
+.devvault-markdown li {
+  padding-left: 0.25rem;
+}
+
+.devvault-markdown li + li {
+  margin-top: 0.35em;
+}
+
+.devvault-markdown li > ul,
+.devvault-markdown li > ol {
+  margin-block: 0.45em;
+}
+
+.devvault-markdown li > p {
+  margin-block: 0.4em;
+}
+
+.devvault-markdown a {
+  color: #67e8f9;
+  text-decoration: underline;
+  text-decoration-color: rgb(34 211 238 / 0.45);
+  text-underline-offset: 0.2em;
+}
+
+.devvault-markdown a:hover {
+  color: #a5f3fc;
+  text-decoration-color: currentColor;
+}
+
+.devvault-markdown :not(pre) > code {
+  border: 1px solid #3f3f46;
+  border-radius: 0.35rem;
+  background: #18181b;
+  padding: 0.12em 0.4em;
+  color: #a5f3fc;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.88em;
+  overflow-wrap: anywhere;
+}
+
+.devvault-markdown pre {
+  max-width: 100%;
+  margin-block: 1.4em;
+  overflow-x: auto;
+  border: 1px solid #30363d;
+  border-radius: 0.75rem;
+  background: #0d1117;
+  padding: 1.1rem 1.25rem;
+  color: #e6edf3;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+.devvault-markdown pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: inherit;
+  overflow-wrap: normal;
+}
+
+.devvault-markdown blockquote {
+  margin-block: 1.25em;
+  border-left: 3px solid #22d3ee;
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: rgb(8 145 178 / 0.08);
+  padding: 0.25rem 1rem;
+  color: #a1a1aa;
+}
+
+.devvault-markdown blockquote > :first-child {
+  margin-top: 0.5em;
+}
+
+.devvault-markdown blockquote > :last-child {
+  margin-bottom: 0.5em;
+}
+
+.devvault-markdown hr {
+  margin-block: 2em;
+  border: 0;
+  border-top: 1px solid #3f3f46;
+}
+
+.devvault-markdown table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  margin-block: 1.5em;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.devvault-markdown th,
+.devvault-markdown td {
+  border: 1px solid #3f3f46;
+  padding: 0.55rem 0.8rem;
+  text-align: left;
+}
+
+.devvault-markdown th {
+  background: #18181b;
+  color: #fafafa;
+  font-weight: 600;
+}
+
+.devvault-markdown tr:nth-child(even) td {
+  background: rgb(24 24 27 / 0.55);
+}
+
+.devvault-markdown input[type="checkbox"] {
+  margin-right: 0.45rem;
+  accent-color: #22d3ee;
+}
+
+.devvault-markdown img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.625rem;
 }
