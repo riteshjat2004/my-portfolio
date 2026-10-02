@@ -30,6 +30,29 @@ interface DevVaultBlockRendererProps {
   interactive?: boolean;
 }
 
+/**
+ * Reusable prose text component that preserves whitespace, single newlines,
+ * intentional blank lines, and spaces entered by the author while ensuring
+ * natural container wrapping and breaking of long words/URLs.
+ */
+export function DevVaultProseText({
+  content,
+  className = "",
+  as: Component = "div",
+}: {
+  content?: string | null;
+  className?: string;
+  as?: "div" | "p" | "span";
+}) {
+  if (content === null || content === undefined || content === "") {
+    return null;
+  }
+
+  return (
+    <Component className={`whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${className}`}>{content}</Component>
+  );
+}
+
 export default function DevVaultBlockRenderer({
   blocks,
   interactive = true,
@@ -56,7 +79,7 @@ export default function DevVaultBlockRenderer({
   // If content is a raw string (e.g. legacy markdown or plain text)
   if (typeof blocks === "string") {
     return (
-      <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed whitespace-pre-wrap">
+      <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
         {blocks}
       </div>
     );
@@ -125,7 +148,7 @@ function SingleBlockRenderer({
         return (
           <h2
             id={slug}
-            className="group mt-10 mb-4 flex items-center gap-2 text-2xl sm:text-3xl font-extrabold text-white tracking-tight border-b border-zinc-800/80 pb-3"
+            className="group mt-10 mb-4 flex items-center gap-2 text-2xl sm:text-3xl font-extrabold text-white tracking-tight border-b border-zinc-800/80 pb-3 break-words"
           >
             <span className="text-cyan-400 font-mono text-lg select-none">#</span>
             <span>{text}</span>
@@ -143,7 +166,7 @@ function SingleBlockRenderer({
         return (
           <h3
             id={slug}
-            className="mt-8 mb-3 flex items-center gap-2 text-xl sm:text-2xl font-bold text-white tracking-tight"
+            className="mt-8 mb-3 flex items-center gap-2 text-xl sm:text-2xl font-bold text-white tracking-tight break-words"
           >
             <span className="text-indigo-400 font-mono text-base select-none">##</span>
             <span>{text}</span>
@@ -153,7 +176,7 @@ function SingleBlockRenderer({
       return (
         <h4
           id={slug}
-          className="mt-6 mb-2 text-base sm:text-lg font-semibold text-zinc-200 tracking-wide"
+          className="mt-6 mb-2 text-base sm:text-lg font-semibold text-zinc-200 tracking-wide break-words"
         >
           {text}
         </h4>
@@ -163,9 +186,11 @@ function SingleBlockRenderer({
     case "paragraph": {
       const data = (block.data || {}) as ParagraphBlockData;
       return (
-        <p className="text-base sm:text-lg text-zinc-300 leading-relaxed font-normal whitespace-pre-line max-w-prose">
-          {data.text || ""}
-        </p>
+        <DevVaultProseText
+          as="p"
+          className="text-base sm:text-lg text-zinc-300 leading-relaxed font-normal max-w-prose"
+          content={data.text}
+        />
       );
     }
 
@@ -173,7 +198,11 @@ function SingleBlockRenderer({
       const data = (block.data || {}) as QuoteBlockData;
       return (
         <blockquote className="my-6 border-l-4 border-cyan-500 bg-gradient-to-r from-cyan-950/20 to-transparent p-5 sm:p-6 rounded-r-2xl italic text-zinc-200">
-          <p className="text-base sm:text-lg font-serif">“{data.text}”</p>
+          <DevVaultProseText
+            as="p"
+            className="text-base sm:text-lg font-serif"
+            content={data.text ? `“${data.text}”` : ""}
+          />
           {(data.author || data.source) && (
             <footer className="mt-3 text-xs sm:text-sm font-sans not-italic text-zinc-400 flex items-center gap-2">
               <span className="text-cyan-400 font-bold">—</span>
@@ -238,12 +267,14 @@ function SingleBlockRenderer({
               </span>
             )}
           </div>
-          <div className="mt-3 text-xl font-extrabold text-white font-mono">
+          <div className="mt-3 text-xl font-extrabold text-white font-mono break-words">
             {data.term}
           </div>
-          <p className="mt-2 text-sm sm:text-base text-zinc-300 leading-relaxed">
-            {data.definition}
-          </p>
+          <DevVaultProseText
+            as="p"
+            className="mt-2 text-sm sm:text-base text-zinc-300 leading-relaxed"
+            content={data.definition}
+          />
         </div>
       );
     }
@@ -256,20 +287,22 @@ function SingleBlockRenderer({
             <span>🧠</span>
             <span>Core Concept</span>
           </div>
-          <h3 className="mt-2 text-xl sm:text-2xl font-extrabold text-white">
+          <h3 className="mt-2 text-xl sm:text-2xl font-extrabold text-white break-words">
             {data.title}
           </h3>
-          <p className="mt-3 text-sm sm:text-base text-zinc-300 leading-relaxed">
-            {data.explanation}
-          </p>
+          <DevVaultProseText
+            as="p"
+            className="mt-3 text-sm sm:text-base text-zinc-300 leading-relaxed"
+            content={data.explanation}
+          />
           {data.analogy && (
             <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-200/90 flex gap-3">
               <span className="text-lg select-none">🎯</span>
-              <div>
+              <div className="flex-1 min-w-0">
                 <strong className="block text-amber-400 font-semibold mb-1">
                   Mental Model / Analogy:
                 </strong>
-                {data.analogy}
+                <DevVaultProseText content={data.analogy} />
               </div>
             </div>
           )}
@@ -282,7 +315,7 @@ function SingleBlockRenderer({
                 {data.keyPoints.map((pt, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <span className="text-cyan-400 font-bold select-none">•</span>
-                    <span>{pt}</span>
+                    <DevVaultProseText as="span" content={pt} />
                   </li>
                 ))}
               </ul>
@@ -300,12 +333,14 @@ function SingleBlockRenderer({
             {data.stepNumber || 1}
           </div>
           <div>
-            <h4 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+            <h4 className="text-lg sm:text-xl font-bold text-white tracking-tight break-words">
               {data.title}
             </h4>
-            <p className="mt-2 text-sm sm:text-base text-zinc-300 leading-relaxed">
-              {data.description}
-            </p>
+            <DevVaultProseText
+              as="p"
+              className="mt-2 text-sm sm:text-base text-zinc-300 leading-relaxed"
+              content={data.description}
+            />
             {data.code && (
               <div className="mt-4">
                 <CodeBlockView
@@ -418,9 +453,11 @@ function SingleBlockRenderer({
             </span>
           </div>
           {data.description && (
-            <p className="mt-1 text-xs sm:text-sm text-zinc-400 pl-6">
-              {data.description}
-            </p>
+            <DevVaultProseText
+              as="p"
+              className="mt-1 text-xs sm:text-sm text-zinc-400 pl-6"
+              content={data.description}
+            />
           )}
           <span className="mt-2 block text-[11px] font-mono text-zinc-500 pl-6 truncate">
             {data.url}
@@ -434,10 +471,10 @@ function SingleBlockRenderer({
       return (
         <div className="my-2 rounded-xl border border-zinc-800/80 bg-zinc-950/40 px-4 py-3 text-xs sm:text-sm text-zinc-400 flex items-start gap-3">
           <span className="text-zinc-500 font-mono font-bold select-none">[ref]</span>
-          <div className="flex-1">
-            <span className="font-semibold text-zinc-200">{data.title}</span>
+          <div className="flex-1 min-w-0">
+            <span className="font-semibold text-zinc-200 break-words">{data.title}</span>
             {data.citation && (
-              <span className="block mt-0.5 text-zinc-400 italic">
+              <span className="block mt-0.5 text-zinc-400 italic break-words">
                 {data.citation}
               </span>
             )}
@@ -446,7 +483,7 @@ function SingleBlockRenderer({
                 href={data.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-[11px] font-mono text-cyan-400 hover:underline"
+                className="mt-1 inline-flex items-center gap-1 text-[11px] font-mono text-cyan-400 hover:underline break-all"
               >
                 <span>source link</span>
                 <span>↗</span>
@@ -464,9 +501,13 @@ function SingleBlockRenderer({
           <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-semibold block mb-1">
             Related Exploration
           </span>
-          <h4 className="text-base font-bold text-white">{data.title}</h4>
+          <h4 className="text-base font-bold text-white break-words">{data.title}</h4>
           {data.description && (
-            <p className="mt-1 text-xs text-zinc-400">{data.description}</p>
+            <DevVaultProseText
+              as="p"
+              className="mt-1 text-xs text-zinc-400"
+              content={data.description}
+            />
           )}
         </div>
       );
@@ -479,22 +520,22 @@ function SingleBlockRenderer({
           <ReactMarkdown
             components={{
               h1: ({ children }) => (
-                <h3 className="text-xl font-bold text-white mb-3 mt-4 border-b border-zinc-800 pb-1">
+                <h3 className="text-xl font-bold text-white mb-3 mt-4 border-b border-zinc-800 pb-1 break-words">
                   {children}
                 </h3>
               ),
               h2: ({ children }) => (
-                <h4 className="text-lg font-bold text-white mb-2 mt-3">
+                <h4 className="text-lg font-bold text-white mb-2 mt-3 break-words">
                   {children}
                 </h4>
               ),
               h3: ({ children }) => (
-                <h5 className="text-base font-semibold text-white mb-2 mt-2">
+                <h5 className="text-base font-semibold text-white mb-2 mt-2 break-words">
                   {children}
                 </h5>
               ),
               p: ({ children }) => (
-                <p className="mb-3 leading-relaxed text-zinc-300 last:mb-0">
+                <p className="mb-3 leading-relaxed text-zinc-300 last:mb-0 break-words">
                   {children}
                 </p>
               ),
@@ -773,9 +814,10 @@ function CommandBlockView({ data }: { data: CommandBlockData }) {
   return (
     <div className="my-4 rounded-xl border border-zinc-800 bg-zinc-950 p-3 sm:p-4 font-mono">
       {data.description && (
-        <div className="text-xs text-zinc-400 mb-2 font-sans">
-          {data.description}
-        </div>
+        <DevVaultProseText
+          className="text-xs text-zinc-400 mb-2 font-sans"
+          content={data.description}
+        />
       )}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 overflow-x-auto text-xs sm:text-sm text-cyan-300">
@@ -911,9 +953,11 @@ function CalloutBlockView({
           {data.title || cfg.defaultTitle}
         </h4>
       </div>
-      <p className="mt-2 text-sm sm:text-base text-zinc-200 leading-relaxed pl-8">
-        {data.text}
-      </p>
+      <DevVaultProseText
+        as="p"
+        className="mt-2 text-sm sm:text-base text-zinc-200 leading-relaxed pl-8"
+        content={data.text}
+      />
     </div>
   );
 }
@@ -961,7 +1005,7 @@ function ChecklistBlockView({
                 onChange={() => toggle(key)}
                 className="mt-1 h-4 w-4 rounded border-zinc-700 bg-zinc-800 text-emerald-400 focus:ring-0 cursor-pointer"
               />
-              <span className={`text-sm sm:text-base ${isDone ? "line-through text-zinc-500" : ""}`}>
+              <span className={`text-sm sm:text-base break-words ${isDone ? "line-through text-zinc-500" : ""}`}>
                 {item.text}
               </span>
             </label>
