@@ -26,6 +26,52 @@ import DevVaultLightbox, { LightboxImage } from "./DevVaultLightbox";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
+import type { Element, Root } from "hast";
+
+function getMarkdownHeadingText(node: Element): string {
+  return node.children
+    .map((child) => {
+      if (child.type === "text") return child.value;
+      if (child.type === "element") return getMarkdownHeadingText(child);
+      return "";
+    })
+    .join("");
+}
+
+function rehypeSlugHeadings() {
+  return (tree: Root) => {
+    const usedSlugs = new Set<string>();
+
+    const addHeadingIds = (node: Root | Element) => {
+      for (const child of node.children) {
+        if (child.type !== "element") continue;
+
+        if (/^h[1-6]$/.test(child.tagName)) {
+          const baseSlug = getMarkdownHeadingText(child)
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^\p{L}\p{N}_-]/gu, "");
+
+          let id = baseSlug;
+          let suffix = 0;
+          while (id && usedSlugs.has(id)) {
+            suffix += 1;
+            id = `${baseSlug}-${suffix}`;
+          }
+          if (id) {
+            usedSlugs.add(id);
+            child.properties.id = id;
+          }
+        }
+
+        addHeadingIds(child);
+      }
+    };
+
+    addHeadingIds(tree);
+  };
+}
 
 interface DevVaultBlockRendererProps {
   blocks?: DevVaultBlock[] | string | Record<string, unknown> | null;
@@ -60,13 +106,20 @@ function DevVaultMarkdown({ markdown }: { markdown: string }) {
     <div className="devvault-markdown">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        rehypePlugins={[rehypeHighlight, rehypeSlugHeadings]}
         components={{
-          a: ({ href, children }) => (
-            <a href={href} target="_blank" rel="noopener noreferrer">
-              {children}
-            </a>
-          ),
+          a: ({ href, children }) => {
+            const isAnchorLink = href?.startsWith("#");
+            return (
+              <a
+                href={href}
+                target={isAnchorLink ? undefined : "_blank"}
+                rel={isAnchorLink ? undefined : "noopener noreferrer"}
+              >
+                {children}
+              </a>
+            );
+          },
           input: ({ checked }) => (
             <input
               type="checkbox"

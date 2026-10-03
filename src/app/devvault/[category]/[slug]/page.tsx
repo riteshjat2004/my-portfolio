@@ -173,7 +173,7 @@ export default async function DevVaultTopicPage({ params }: PageProps) {
         {/* Main Reading Container: Content + Sidebar Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Main Article Content Column */}
-          <article className="lg:col-span-8 space-y-8">
+          <article className="lg:col-span-10 space-y-8">
             {/* Header Metadata & Title */}
             <header className="space-y-5 border-b border-zinc-800/80 pb-8">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -324,7 +324,7 @@ export default async function DevVaultTopicPage({ params }: PageProps) {
           </article>
 
           {/* Desktop Sticky Table of Contents Sidebar */}
-          <div className="hidden lg:block lg:col-span-4 pl-4 border-l border-zinc-900">
+          <div className="hidden lg:block lg:col-span-2 pl-4 border-l border-zinc-900">
             <DevVaultTOC blocks={content.content} variant="desktop" />
           </div>
         </div>
