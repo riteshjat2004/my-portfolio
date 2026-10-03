@@ -25,8 +25,177 @@ import {
 import DevVaultLightbox, { LightboxImage } from "./DevVaultLightbox";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import type { Element, Root } from "hast";
+import type { Options } from "rehype-sanitize";
+
+const devVaultSanitizeSchema: Options = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    "*": [
+      ...(defaultSchema.attributes?.["*"] || []),
+      "ariaAtomic",
+      "ariaAutoComplete",
+      "ariaBusy",
+      "ariaChecked",
+      "ariaColCount",
+      "ariaColIndex",
+      "ariaColSpan",
+      "ariaControls",
+      "ariaCurrent",
+      "ariaDescribedBy",
+      "ariaDescription",
+      "ariaDetails",
+      "ariaDisabled",
+      "ariaErrorMessage",
+      "ariaExpanded",
+      "ariaFlowTo",
+      "ariaHasPopup",
+      "ariaHidden",
+      "ariaInvalid",
+      "ariaKeyShortcuts",
+      "ariaLabel",
+      "ariaLabelledBy",
+      "ariaLevel",
+      "ariaLive",
+      "ariaModal",
+      "ariaMultiLine",
+      "ariaMultiSelectable",
+      "ariaOrientation",
+      "ariaOwns",
+      "ariaPlaceholder",
+      "ariaPosInSet",
+      "ariaPressed",
+      "ariaReadOnly",
+      "ariaRelevant",
+      "ariaRequired",
+      "ariaRoleDescription",
+      "ariaRowCount",
+      "ariaRowIndex",
+      "ariaRowSpan",
+      "ariaSelected",
+      "ariaSetSize",
+      "ariaSort",
+      "ariaValueMax",
+      "ariaValueMin",
+      "ariaValueNow",
+      "ariaValueText",
+      "className",
+      "data*",
+      "role",
+    ],
+    code: [...(defaultSchema.attributes?.code || []), "className"],
+    iframe: [
+      "allow",
+      ["allowFullScreen", true],
+      "height",
+      "loading",
+      ["referrerPolicy", "no-referrer"],
+      ["sandbox", "allow-scripts", "allow-same-origin", "allow-presentation"],
+      "src",
+      "title",
+      "width",
+    ],
+    span: [...(defaultSchema.attributes?.span || []), "className"],
+  },
+  strip: [
+    ...(defaultSchema.strip || []),
+    "applet",
+    "base",
+    "embed",
+    "form",
+    "link",
+    "meta",
+    "object",
+    "style",
+  ],
+  tagNames: [...(defaultSchema.tagNames || []), "iframe", "mark"],
+};
+
+function isAllowedEmbedUrl(value: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return false;
+  }
+
+  if (url.protocol !== "https:" || url.port) return false;
+
+  const isYoutube =
+    (url.hostname === "www.youtube.com" ||
+      url.hostname === "www.youtube-nocookie.com") &&
+    /^\/embed\/[A-Za-z0-9_-]+\/?$/.test(url.pathname);
+  const isVimeo =
+    url.hostname === "player.vimeo.com" &&
+    /^\/video\/\d+\/?$/.test(url.pathname);
+
+  return isYoutube || isVimeo;
+}
+
+function rehypeSecureEmbeds() {
+  return (tree: Root) => {
+    const secureEmbeds = (parent: Root | Element) => {
+      parent.children = parent.children.filter((child) => {
+        if (child.type !== "element") return true;
+        if (child.tagName === "iframe") {
+          const src = child.properties.src;
+          if (typeof src !== "string" || !isAllowedEmbedUrl(src)) {
+            return false;
+          }
+
+          child.properties = {
+            src,
+            title:
+              typeof child.properties.title === "string"
+                ? child.properties.title
+                : "Embedded video",
+            width: child.properties.width,
+            height: child.properties.height,
+            allow: "encrypted-media; fullscreen; picture-in-picture",
+            allowFullScreen: true,
+            loading: "lazy",
+            referrerPolicy: "no-referrer",
+            sandbox: [
+              "allow-scripts",
+              "allow-same-origin",
+              "allow-presentation",
+            ],
+          };
+        }
+
+        secureEmbeds(child);
+        return true;
+      });
+    };
+
+    secureEmbeds(tree);
+  };
+}
+
+function rehypeSafeExternalLinks() {
+  return (tree: Root) => {
+    const addSafeLinkAttributes = (parent: Root | Element) => {
+      for (const child of parent.children) {
+        if (child.type !== "element") continue;
+
+        if (child.tagName === "a" && typeof child.properties.href === "string") {
+          if (!child.properties.href.startsWith("#")) {
+            child.properties.target = "_blank";
+            child.properties.rel = ["noopener", "noreferrer"];
+          }
+        }
+
+        addSafeLinkAttributes(child);
+      }
+    };
+
+    addSafeLinkAttributes(tree);
+  };
+}
 
 function getMarkdownHeadingText(node: Element): string {
   return node.children
@@ -106,20 +275,15 @@ function DevVaultMarkdown({ markdown }: { markdown: string }) {
     <div className="devvault-markdown">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight, rehypeSlugHeadings]}
+        rehypePlugins={[
+          rehypeRaw,
+          rehypeSecureEmbeds,
+          rehypeHighlight,
+          [rehypeSanitize, devVaultSanitizeSchema],
+          rehypeSafeExternalLinks,
+          rehypeSlugHeadings,
+        ]}
         components={{
-          a: ({ href, children }) => {
-            const isAnchorLink = href?.startsWith("#");
-            return (
-              <a
-                href={href}
-                target={isAnchorLink ? undefined : "_blank"}
-                rel={isAnchorLink ? undefined : "noopener noreferrer"}
-              >
-                {children}
-              </a>
-            );
-          },
           input: ({ checked }) => (
             <input
               type="checkbox"

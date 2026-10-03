@@ -14,12 +14,15 @@ import projectRoutes from "./routes/project.routes.js";
 import blogRoutes from "./routes/blog.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import devvaultRoutes from "./routes/devvault.routes.js";
+import devVaultPublishDiagnostics from "./middleware/devvaultPublishDiagnostics.js";
 
 connectDB();
 
 const app = express();
 
 app.set("trust proxy", 1);
+
+app.use(devVaultPublishDiagnostics);
 
 // Configure dynamic CORS origins
 const defaultAllowedOrigins = [
