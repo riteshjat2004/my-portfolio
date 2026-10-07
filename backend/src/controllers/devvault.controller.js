@@ -8,14 +8,162 @@ import { sendError } from "../utils/errorHandler.js";
 import { uploadImageToCloudinary } from "../services/cloudinary.service.js";
 
 // ==========================================
+// IN-MEMORY RESPONSE CACHING & PERFORMANCE ACCELERATOR
+// ==========================================
+const devVaultMemoryCache = new Map();
+
+export const getCachedData = (key) => {
+  const item = devVaultMemoryCache.get(key);
+  if (!item) return null;
+  if (Date.now() > item.expiry) {
+    devVaultMemoryCache.delete(key);
+    return null;
+  }
+  return item.data;
+};
+
+export const setCachedData = (key, data, ttlSeconds = 120) => {
+  devVaultMemoryCache.set(key, {
+    data,
+    expiry: Date.now() + ttlSeconds * 1000,
+  });
+};
+
+export const invalidateDevVaultCache = () => {
+  devVaultMemoryCache.clear();
+};
+
+// ==========================================
 // CATEGORY CONTROLLERS
 // ==========================================
+
+/**
+ * Public: Consolidated Home Feed
+ * Fetches categories (with counts), featured topics, recent topics, and brain treasure in ONE call.
+ * Output is cached in memory for sub-10ms response times.
+ */
+export const getPublicHomeFeed = async (req, res) => {
+  try {
+    const cacheKey = "devvault_home_feed";
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+      return res.status(200).json(cached);
+    }
+
+    // 1. Fetch categories
+    const categoriesPromise = DevVaultCategory.find({ visibility: "visible" })
+      .sort({ displayOrder: 1, name: 1 })
+      .lean();
+
+    // 2. Fetch featured topics (strip heavy content/draft payload)
+    const featuredTopicsPromise = DevVaultContent.find({
+      status: "published",
+      visibility: "visible",
+      featured: true,
+    })
+      .populate("category", "name slug icon")
+      .select("-content -draft")
+      .sort({ ordering: 1, createdAt: -1 })
+      .limit(4)
+      .lean();
+
+    // 3. Fetch recent topics (strip heavy content/draft payload)
+    const recentTopicsPromise = DevVaultContent.find({
+      status: "published",
+      visibility: "visible",
+    })
+      .populate("category", "name slug icon")
+      .select("-content -draft")
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(5)
+      .lean();
+
+    // 4. Fetch brain treasure preview + total count
+    const brainTreasurePromise = DevVaultBrainTreasure.find({
+      status: "published",
+      visibility: "visible",
+    })
+      .sort({ displayOrder: 1, createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    const totalBrainTreasurePromise = DevVaultBrainTreasure.countDocuments({
+      status: "published",
+      visibility: "visible",
+    });
+
+    // Execute queries in parallel
+    const [categories, featuredTopics, recentTopics, brainTreasure, totalBrainTreasure] =
+      await Promise.all([
+        categoriesPromise,
+        featuredTopicsPromise,
+        recentTopicsPromise,
+        brainTreasurePromise,
+        totalBrainTreasurePromise,
+      ]);
+
+    // Attach published content counts to each category using indexed aggregate
+    const categoryIds = categories.map((c) => c._id);
+    const counts = await DevVaultContent.aggregate([
+      {
+        $match: {
+          category: { $in: categoryIds },
+          status: "published",
+          visibility: "visible",
+        },
+      },
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const countMap = counts.reduce((acc, curr) => {
+      acc[curr._id.toString()] = curr.count;
+      return acc;
+    }, {});
+
+    const enrichedCategories = categories.map((cat) => ({
+      ...cat,
+      contentCount: countMap[cat._id.toString()] || 0,
+    }));
+
+    const responsePayload = {
+      success: true,
+      categories: enrichedCategories,
+      featuredTopics,
+      recentTopics,
+      brainTreasure: {
+        items: brainTreasure,
+        total: totalBrainTreasure,
+      },
+    };
+
+    // Cache in memory for 2 minutes
+    setCachedData(cacheKey, responsePayload, 120);
+
+    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+    return res.status(200).json(responsePayload);
+  } catch (error) {
+    sendError(res, error, "Failed to retrieve DevVault home feed");
+  }
+};
 
 /**
  * Public: Get all visible categories with published content counts
  */
 export const getPublicCategories = async (req, res) => {
   try {
+    const cacheKey = "devvault_categories";
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+      return res.status(200).json(cached);
+    }
+
     const categories = await DevVaultCategory.find({ visibility: "visible" })
       .sort({ displayOrder: 1, name: 1 })
       .lean();
@@ -48,10 +196,14 @@ export const getPublicCategories = async (req, res) => {
       contentCount: countMap[cat._id.toString()] || 0,
     }));
 
-    res.status(200).json({
+    const responsePayload = {
       success: true,
       categories: enrichedCategories,
-    });
+    };
+
+    setCachedData(cacheKey, responsePayload, 120);
+    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+    res.status(200).json(responsePayload);
   } catch (error) {
     sendError(res, error, "Failed to retrieve categories");
   }
@@ -177,6 +329,8 @@ export const createCategory = async (req, res) => {
       visibility: visibility === "hidden" ? "hidden" : "visible",
     });
 
+    invalidateDevVaultCache();
+
     res.status(201).json({
       success: true,
       category,
@@ -238,6 +392,8 @@ export const updateCategory = async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    invalidateDevVaultCache();
+
     res.status(200).json({
       success: true,
       category: updated,
@@ -276,6 +432,8 @@ export const deleteCategory = async (req, res) => {
     await saveToTrash("devvault-category", "delete", category._id, category.toObject());
 
     await DevVaultCategory.findByIdAndDelete(category._id);
+
+    invalidateDevVaultCache();
 
     res.status(200).json({
       success: true,
@@ -662,6 +820,8 @@ export const createContent = async (req, res) => {
       author: author?.trim() || "Ritesh Jat",
     });
 
+    invalidateDevVaultCache();
+
     res.status(201).json({
       success: true,
       content: newContent,
@@ -920,6 +1080,8 @@ export const updateContent = async (req, res) => {
       { new: true, runValidators: true }
     ).populate("category", "name slug icon");
 
+    invalidateDevVaultCache();
+
     res.status(200).json({
       success: true,
       message: updates.status === "published" ? "Published successfully!" : "Updated successfully!",
@@ -946,6 +1108,8 @@ export const deleteContent = async (req, res) => {
     await saveToTrash("devvault-content", "delete", content._id, content.toObject());
 
     await DevVaultContent.findByIdAndDelete(content._id);
+
+    invalidateDevVaultCache();
 
     res.status(200).json({
       success: true,
@@ -979,6 +1143,8 @@ export const patchContentStatus = async (req, res) => {
         message: "Content not found",
       });
     }
+
+    invalidateDevVaultCache();
 
     res.status(200).json({
       success: true,
@@ -1229,6 +1395,8 @@ export const createBrainTreasure = async (req, res) => {
       displayOrder: Number(displayOrder) || 0,
     });
 
+    invalidateDevVaultCache();
+
     res.status(201).json({
       success: true,
       item: newItem,
@@ -1294,6 +1462,8 @@ export const updateBrainTreasure = async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    invalidateDevVaultCache();
+
     res.status(200).json({
       success: true,
       item: updated,
@@ -1320,6 +1490,8 @@ export const deleteBrainTreasure = async (req, res) => {
     await saveToTrash("devvault-brain-treasure", "delete", item._id, item.toObject());
 
     await DevVaultBrainTreasure.findByIdAndDelete(req.params.id);
+
+    invalidateDevVaultCache();
 
     res.status(200).json({
       success: true,
@@ -1352,6 +1524,8 @@ export const patchBrainTreasureStatus = async (req, res) => {
         message: "Brain Treasure question not found",
       });
     }
+
+    invalidateDevVaultCache();
 
     res.status(200).json({
       success: true,

@@ -2,11 +2,15 @@ import { Metadata } from "next";
 import Navbar from "@/components/navigation/Navbar";
 import Footer from "@/sections/footer/Footer";
 import DevVaultHomeClient from "@/components/devvault/DevVaultHomeClient";
-import { DevVaultCategory, DevVaultContent, DevVaultBrainTreasure } from "@/types/devvault";
+import {
+  DevVaultCategory,
+  DevVaultContent,
+  DevVaultBrainTreasure,
+  DevVaultHomeFeedResponse,
+} from "@/types/devvault";
 
-// Enable 30-second stale-while-revalidate caching so navigation is instant (<50ms)
-// while ensuring admin updates and new questions automatically sync within 30s.
-export const revalidate = 30;
+// 60-second stale-while-revalidate caching with background revalidation
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "DevVault | Technical Knowledge Platform",
@@ -28,83 +32,78 @@ const getApiUrl = () =>
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:5000/api";
 
-async function getCategories(): Promise<DevVaultCategory[]> {
+// Fast consolidated home feed loader (single round-trip to backend)
+async function getHomeFeed(): Promise<DevVaultHomeFeedResponse> {
+  const apiUrl = getApiUrl();
   try {
-    const res = await fetch(`${getApiUrl()}/devvault/categories`, {
-      next: { revalidate: 30 },
-      signal: AbortSignal.timeout(6000),
+    const res = await fetch(`${apiUrl}/devvault/home-feed`, {
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(4000),
     });
 
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.categories || [];
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) {
+        return {
+          categories: data.categories || [],
+          featuredTopics: data.featuredTopics || [],
+          recentTopics: data.recentTopics || [],
+          brainTreasure: data.brainTreasure || { items: [], total: 0 },
+        };
+      }
+    }
   } catch (error) {
-    console.error("Failed to load DevVault categories:", error);
-    return [];
+    console.warn("DevVault consolidated feed timed out or unavailable, attempting fallback:", error);
   }
-}
 
-async function getFeaturedTopics(): Promise<DevVaultContent[]> {
+  // Graceful fallback to individual queries if home-feed is not yet cached or fails
   try {
-    const res = await fetch(`${getApiUrl()}/devvault/content?featured=true&limit=4`, {
-      next: { revalidate: 30 },
-      signal: AbortSignal.timeout(6000),
-    });
+    const [catRes, featRes, recRes, btRes] = await Promise.all([
+      fetch(`${apiUrl}/devvault/categories`, {
+        next: { revalidate: 60 },
+        signal: AbortSignal.timeout(4000),
+      }).catch(() => null),
+      fetch(`${apiUrl}/devvault/content?featured=true&limit=4`, {
+        next: { revalidate: 60 },
+        signal: AbortSignal.timeout(4000),
+      }).catch(() => null),
+      fetch(`${apiUrl}/devvault/content?limit=5&sort=newest`, {
+        next: { revalidate: 60 },
+        signal: AbortSignal.timeout(4000),
+      }).catch(() => null),
+      fetch(`${apiUrl}/devvault/brain-treasure?limit=5`, {
+        next: { revalidate: 60 },
+        signal: AbortSignal.timeout(4000),
+      }).catch(() => null),
+    ]);
 
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.content || [];
-  } catch (error) {
-    console.error("Failed to load featured topics:", error);
-    return [];
-  }
-}
+    const categories = catRes && catRes.ok ? (await catRes.json()).categories || [] : [];
+    const featuredTopics = featRes && featRes.ok ? (await featRes.json()).content || [] : [];
+    const recentTopics = recRes && recRes.ok ? (await recRes.json()).content || [] : [];
+    const btData = btRes && btRes.ok ? await btRes.json() : { items: [], total: 0 };
 
-async function getRecentTopics(): Promise<DevVaultContent[]> {
-  try {
-    // Strictly fetch maximum 5 latest published topics from server
-    const res = await fetch(`${getApiUrl()}/devvault/content?limit=5&sort=newest`, {
-      next: { revalidate: 30 },
-      signal: AbortSignal.timeout(6000),
-    });
-
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.content || [];
-  } catch (error) {
-    console.error("Failed to load recent topics:", error);
-    return [];
-  }
-}
-
-async function getBrainTreasure(): Promise<{ items: DevVaultBrainTreasure[]; total: number }> {
-  try {
-    // Strictly fetch maximum 5 Brain Treasure questions for homepage preview
-    const res = await fetch(`${getApiUrl()}/devvault/brain-treasure?limit=5`, {
-      next: { revalidate: 30 },
-      signal: AbortSignal.timeout(6000),
-    });
-
-    if (!res.ok) return { items: [], total: 0 };
-    const data = await res.json();
     return {
-      items: data.items || [],
-      total: data.total || 0,
+      categories,
+      featuredTopics,
+      recentTopics,
+      brainTreasure: {
+        items: btData.items || [],
+        total: btData.total || 0,
+      },
     };
-  } catch (error) {
-    console.error("Failed to load Brain Treasure questions:", error);
-    return { items: [], total: 0 };
+  } catch (err) {
+    console.error("DevVault fallback queries failed:", err);
+    return {
+      categories: [],
+      featuredTopics: [],
+      recentTopics: [],
+      brainTreasure: { items: [], total: 0 },
+    };
   }
 }
 
 export default async function DevVaultPage() {
-  // Parallel execution of all 4 independent data queries
-  const [categories, featuredTopics, recentTopics, brainTreasureData] = await Promise.all([
-    getCategories(),
-    getFeaturedTopics(),
-    getRecentTopics(),
-    getBrainTreasure(),
-  ]);
+  const feed = await getHomeFeed();
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white selection:bg-cyan-500/20 selection:text-cyan-300">
@@ -112,11 +111,11 @@ export default async function DevVaultPage() {
 
       <main className="flex-1 mx-auto max-w-7xl w-full px-4 sm:px-8 lg:px-12 py-12">
         <DevVaultHomeClient
-          categories={categories}
-          featuredTopics={featuredTopics}
-          recentTopics={recentTopics}
-          brainTreasure={brainTreasureData.items}
-          totalBrainTreasure={brainTreasureData.total}
+          categories={feed.categories}
+          featuredTopics={feed.featuredTopics}
+          recentTopics={feed.recentTopics}
+          brainTreasure={feed.brainTreasure.items}
+          totalBrainTreasure={feed.brainTreasure.total}
         />
       </main>
 

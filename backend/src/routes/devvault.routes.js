@@ -2,6 +2,7 @@ import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
 import { uploadDevVaultImageMiddleware } from "../middleware/upload.middleware.js";
 import {
+  getPublicHomeFeed,
   getPublicCategories,
   getPublicCategoryBySlug,
   getAdminCategories,
@@ -31,6 +32,9 @@ const router = express.Router();
 // ==========================================
 // PUBLIC ROUTES
 // ==========================================
+
+// Consolidated Home Feed (Zero-delay single round-trip)
+router.get("/home-feed", getPublicHomeFeed);
 
 // Categories
 router.get("/categories", getPublicCategories);

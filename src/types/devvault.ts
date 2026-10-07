@@ -262,4 +262,14 @@ export interface DevVaultBrainTreasureFilterParams {
   limit?: number;
 }
 
+export interface DevVaultHomeFeedResponse {
+  categories: DevVaultCategory[];
+  featuredTopics: DevVaultContent[];
+  recentTopics: DevVaultContent[];
+  brainTreasure: {
+    items: DevVaultBrainTreasure[];
+    total: number;
+  };
+}
+
 

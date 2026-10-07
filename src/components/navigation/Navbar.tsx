@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 const navLinks = [
@@ -16,6 +16,7 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Reset pending loading indicator as soon as navigation completes
   useEffect(() => {
@@ -92,6 +93,12 @@ export default function Navbar() {
               <Link
                 key={link.label}
                 href={link.href}
+                prefetch={true}
+                onMouseEnter={() => {
+                  if (!link.href.startsWith("/#")) {
+                    router.prefetch(link.href);
+                  }
+                }}
                 onClick={(e) => handleNavLinkClick(e, link.href)}
                 className={`relative text-sm font-medium transition-all duration-300 ease-in-out flex items-center gap-1.5 ${
                   isPending

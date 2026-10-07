@@ -121,6 +121,20 @@ devVaultContentSchema.index({
   createdAt: -1,
 });
 
+// High-speed compound indexes for category counts and topic listings
+devVaultContentSchema.index({
+  category: 1,
+  status: 1,
+  visibility: 1,
+});
+
+devVaultContentSchema.index({
+  category: 1,
+  status: 1,
+  visibility: 1,
+  createdAt: -1,
+});
+
 devVaultContentSchema.index({
   title: "text",
   shortDescription: "text",

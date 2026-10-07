@@ -48,7 +48,7 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
         frameAncestors: [
           "'self'",
           ...allowedOrigins,

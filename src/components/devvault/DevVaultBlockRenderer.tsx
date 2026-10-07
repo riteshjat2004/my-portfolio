@@ -23,6 +23,7 @@ import {
   MarkdownBlockData,
 } from "@/types/devvault";
 import DevVaultLightbox, { LightboxImage } from "./DevVaultLightbox";
+import DevVaultMermaid from "./DevVaultMermaid";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
@@ -88,6 +89,14 @@ const devVaultSanitizeSchema: Options = {
       "role",
     ],
     code: [...(defaultSchema.attributes?.code || []), "className"],
+    img: [
+      ...(defaultSchema.attributes?.img || []),
+      "className",
+      "loading",
+      "src",
+      "alt",
+      "title",
+    ],
     iframe: [
       "allow",
       ["allowFullScreen", true],
@@ -112,7 +121,12 @@ const devVaultSanitizeSchema: Options = {
     "object",
     "style",
   ],
-  tagNames: [...(defaultSchema.tagNames || []), "iframe", "mark"],
+  tagNames: [...(defaultSchema.tagNames || []), "iframe", "mark", "img", "svg"],
+  protocols: {
+    ...defaultSchema.protocols,
+    href: ["http", "https", "mailto", "tel"],
+    src: ["http", "https", "data"],
+  },
 };
 
 function isAllowedEmbedUrl(value: string): boolean {
@@ -270,6 +284,18 @@ export function DevVaultProseText({
   );
 }
 
+function extractTextFromChildren(children: React.ReactNode): string {
+  if (typeof children === "string") return children;
+  if (typeof children === "number") return String(children);
+  if (Array.isArray(children)) {
+    return children.map(extractTextFromChildren).join("");
+  }
+  if (React.isValidElement(children)) {
+    return extractTextFromChildren((children.props as { children?: React.ReactNode }).children);
+  }
+  return "";
+}
+
 function DevVaultMarkdown({ markdown }: { markdown: string }) {
   return (
     <div className="devvault-markdown">
@@ -284,6 +310,51 @@ function DevVaultMarkdown({ markdown }: { markdown: string }) {
           rehypeSlugHeadings,
         ]}
         components={{
+          pre({ children, ...props }) {
+            // Intercept mermaid blocks inside pre and render DevVaultMermaid directly without wrapping <pre>
+            if (React.isValidElement(children)) {
+              const childProps = children.props as {
+                className?: string;
+                children?: React.ReactNode;
+              };
+              if (childProps?.className?.includes("language-mermaid")) {
+                const chart = extractTextFromChildren(childProps.children);
+                return <DevVaultMermaid chart={chart} />;
+              }
+            }
+            return <pre {...props}>{children}</pre>;
+          },
+          code({ className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || "");
+            const lang = match ? match[1] : "";
+            if (lang === "mermaid") {
+              const chart = extractTextFromChildren(children);
+              return <DevVaultMermaid chart={chart} />;
+            }
+            return (
+              <code className={className} {...props}>
+                {children}
+              </code>
+            );
+          },
+          img({ src, alt, ...props }) {
+            const isBadge =
+              typeof src === "string" &&
+              (src.includes("shields.io") ||
+                src.includes("badge") ||
+                src.endsWith(".svg"));
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={typeof src === "string" ? src : ""}
+                alt={alt || "badge"}
+                loading={isBadge ? "eager" : "lazy"}
+                decoding="async"
+                className="inline-block max-w-full align-middle rounded"
+                {...props}
+              />
+            );
+          },
           input: ({ checked }) => (
             <input
               type="checkbox"
@@ -467,6 +538,9 @@ function SingleBlockRenderer({
     // ----------------------------------------
     case "code": {
       const data = (block.data || {}) as CodeBlockData;
+      if (data.language === "mermaid") {
+        return <DevVaultMermaid chart={data.code} title={data.title} />;
+      }
       return <CodeBlockView data={data} />;
     }
 

@@ -5,7 +5,7 @@ const cspHeader = `
   script-src 'self' 'unsafe-eval' 'unsafe-inline';
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com data:;
-  img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com;
+  img-src 'self' data: blob: https:;
   connect-src 'self' http://localhost:5000 https://portfolio-backend-9y68.onrender.com;
   object-src 'self' http://localhost:5000 https://portfolio-backend-9y68.onrender.com data: blob:;
   frame-src 'self' http://localhost:5000 https://portfolio-backend-9y68.onrender.com;
@@ -55,6 +55,21 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "img.shields.io",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "raw.githubusercontent.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "github.com",
         pathname: "/**",
       },
     ],

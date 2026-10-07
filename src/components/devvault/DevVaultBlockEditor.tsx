@@ -29,6 +29,7 @@ const PROGRAMMING_LANGUAGES = [
   "javascript",
   "typescript",
   "python",
+  "mermaid",
   "c",
   "cpp",
   "java",

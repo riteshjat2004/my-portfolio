@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { DevVaultCategory, DevVaultContent, DevVaultBrainTreasure } from "@/types/devvault";
 import DevVaultSearchBar from "./DevVaultSearchBar";
@@ -16,12 +16,65 @@ interface DevVaultHomeClientProps {
 }
 
 export default function DevVaultHomeClient({
-  categories,
-  featuredTopics,
-  recentTopics,
-  brainTreasure = [],
-  totalBrainTreasure = 0,
+  categories: initialCategories,
+  featuredTopics: initialFeatured,
+  recentTopics: initialRecent,
+  brainTreasure: initialBrainTreasure = [],
+  totalBrainTreasure: initialTotalBT = 0,
 }: DevVaultHomeClientProps) {
+  // Client-side cache hydration so navigation is instant (0ms delay) and never appears empty
+  const [categories, setCategories] = useState<DevVaultCategory[]>(initialCategories);
+  const [featuredTopics, setFeaturedTopics] = useState<DevVaultContent[]>(initialFeatured);
+  const [recentTopics, setRecentTopics] = useState<DevVaultContent[]>(initialRecent);
+  const [brainTreasure, setBrainTreasure] = useState<DevVaultBrainTreasure[]>(initialBrainTreasure);
+  const [totalBrainTreasure, setTotalBrainTreasure] = useState<number>(initialTotalBT);
+  const [isClientHydrated, setIsClientHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsClientHydrated(true);
+
+    if (initialCategories.length > 0) {
+      setCategories(initialCategories);
+      setFeaturedTopics(initialFeatured);
+      setRecentTopics(initialRecent);
+      setBrainTreasure(initialBrainTreasure);
+      setTotalBrainTreasure(initialTotalBT);
+
+      try {
+        sessionStorage.setItem(
+          "devvault_home_cache_v2",
+          JSON.stringify({
+            categories: initialCategories,
+            featuredTopics: initialFeatured,
+            recentTopics: initialRecent,
+            brainTreasure: initialBrainTreasure,
+            totalBrainTreasure: initialTotalBT,
+            timestamp: Date.now(),
+          })
+        );
+      } catch {
+        // Ignore quota limits
+      }
+    } else {
+      // If props arrived empty (e.g. cold start / transient timeout), restore from client cache
+      try {
+        const raw = sessionStorage.getItem("devvault_home_cache_v2");
+        if (raw) {
+          const cached = JSON.parse(raw);
+          if (cached && Array.isArray(cached.categories) && cached.categories.length > 0) {
+            setCategories(cached.categories);
+            setFeaturedTopics(cached.featuredTopics || []);
+            setRecentTopics(cached.recentTopics || []);
+            setBrainTreasure(cached.brainTreasure || []);
+            setTotalBrainTreasure(cached.totalBrainTreasure || 0);
+          }
+        }
+      } catch {
+        // Ignore JSON error
+      }
+    }
+  }, [initialCategories, initialFeatured, initialRecent, initialBrainTreasure, initialTotalBT]);
+
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
@@ -92,8 +145,22 @@ export default function DevVaultHomeClient({
         </div>
 
         {categories.length === 0 ? (
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950/60 p-12 text-center text-zinc-500">
-            No categories available yet. Check back soon!
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-pulse">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="rounded-3xl border border-zinc-800/80 bg-zinc-950/60 p-6 sm:p-7 space-y-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="h-11 w-11 rounded-2xl bg-zinc-800/90" />
+                  <div className="h-5 w-20 rounded-full bg-zinc-800/70" />
+                </div>
+                <div className="space-y-2 pt-1">
+                  <div className="h-5 w-3/5 bg-zinc-800 rounded-md" />
+                  <div className="h-3.5 w-full bg-zinc-800/60 rounded-md" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -221,12 +288,29 @@ export default function DevVaultHomeClient({
         )}
 
         {filteredTopics.length === 0 ? (
-          <div className="rounded-3xl border border-zinc-800/80 bg-zinc-950/40 p-12 text-center text-zinc-500">
-            <span className="text-2xl block mb-2">📚</span>
-            {recentTopics.length === 0
-              ? "No topics published yet. Check back soon as new blueprints are being curated."
-              : "No topics match the selected difficulty and domain filters."}
-          </div>
+          recentTopics.length === 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-3xl border border-zinc-800/80 bg-zinc-950/60 p-6 space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="h-5 w-20 rounded-full bg-zinc-800" />
+                    <div className="h-4 w-16 bg-zinc-800/50 rounded-md" />
+                  </div>
+                  <div className="h-5 w-4/5 bg-zinc-800 rounded-md" />
+                  <div className="h-3.5 w-full bg-zinc-800/60 rounded-md" />
+                  <div className="h-3.5 w-2/3 bg-zinc-800/40 rounded-md" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-zinc-800/80 bg-zinc-950/40 p-12 text-center text-zinc-500">
+              <span className="text-2xl block mb-2">📚</span>
+              No topics match the selected difficulty and domain filters.
+            </div>
+          )
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTopics.map((topic) => (

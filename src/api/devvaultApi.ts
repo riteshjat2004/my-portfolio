@@ -6,11 +6,22 @@ import {
   DevVaultDetailResponse,
   DevVaultBrainTreasure,
   DevVaultBrainTreasureFilterParams,
+  DevVaultHomeFeedResponse,
 } from "@/types/devvault";
 
 // ==========================================
 // PUBLIC API METHODS
 // ==========================================
+
+export const getDevVaultHomeFeed = async (): Promise<DevVaultHomeFeedResponse> => {
+  const response = await api.get("/devvault/home-feed");
+  return {
+    categories: response.data.categories || [],
+    featuredTopics: response.data.featuredTopics || [],
+    recentTopics: response.data.recentTopics || [],
+    brainTreasure: response.data.brainTreasure || { items: [], total: 0 },
+  };
+};
 
 export const getDevVaultCategories = async (): Promise<DevVaultCategory[]> => {
   const response = await api.get("/devvault/categories");
