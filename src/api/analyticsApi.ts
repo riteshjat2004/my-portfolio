@@ -1,9 +1,59 @@
 import api from "./axios";
 import {
   AnalyticsStats,
+  LiveUsersData,
   PageView,
   ProjectClick,
 } from "@/types/analytics";
+
+/**
+ * Get live online users count
+ */
+export const getLiveUsers = async (): Promise<LiveUsersData> => {
+  const response = await api.get("/analytics/live-users");
+  return response.data;
+};
+
+/**
+ * Send presence heartbeat ping
+ */
+export const sendHeartbeat = async (visitorId: string) => {
+  try {
+    await api.post("/analytics/heartbeat", { visitorId });
+  } catch {
+    // Non-blocking background error
+  }
+};
+
+/**
+ * Send immediate presence leave beacon on tab unload/close
+ */
+export const sendLeaveBeacon = (visitorId: string) => {
+  if (!visitorId || typeof window === "undefined") return;
+
+  const apiUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://portfolio-backend-9y68.onrender.com/api";
+
+  const url = `${apiUrl}/analytics/heartbeat`;
+  const payload = JSON.stringify({ visitorId, isLeaving: true });
+
+  try {
+    if (navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: "application/json" });
+      navigator.sendBeacon(url, blob);
+    } else {
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    }
+  } catch {
+    // Non-blocking silent fallback
+  }
+};
 
 /**
  * Get analytics statistics

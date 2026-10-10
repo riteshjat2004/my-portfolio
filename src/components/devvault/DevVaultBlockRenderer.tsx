@@ -454,7 +454,8 @@ function SingleBlockRenderer({
     // ----------------------------------------
     case "heading": {
       const data = (block.data || {}) as HeadingBlockData;
-      const level = data.level || 2;
+      const numLevel = Number(data.level);
+      const level = numLevel === 3 ? 3 : numLevel === 4 ? 4 : 2;
       const text = data.text || "";
       const slug = text
         .toLowerCase()
@@ -464,38 +465,59 @@ function SingleBlockRenderer({
       if (level === 2) {
         return (
           <h2
-            id={slug}
-            className="group mt-10 mb-4 flex items-center gap-2 text-2xl sm:text-3xl font-extrabold text-white tracking-tight border-b border-zinc-800/80 pb-3 break-words"
+            id={slug || undefined}
+            className="group mt-10 mb-4 flex items-center gap-2 text-2xl sm:text-3xl font-extrabold text-white tracking-tight border-b border-zinc-800/80 pb-3 break-words scroll-mt-24"
           >
             <span className="text-cyan-400 font-mono text-lg select-none">#</span>
-            <span>{text}</span>
-            <a
-              href={`#${slug}`}
-              className="opacity-0 group-hover:opacity-100 transition text-zinc-500 text-sm hover:text-cyan-400"
-              aria-label="Link to section"
-            >
-              🔗
-            </a>
+            <span className="flex-1">{text}</span>
+            {slug && (
+              <a
+                href={`#${slug}`}
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 text-sm hover:text-cyan-400 ml-2"
+                aria-label="Link to section"
+              >
+                #
+              </a>
+            )}
           </h2>
         );
       }
       if (level === 3) {
         return (
           <h3
-            id={slug}
-            className="mt-8 mb-3 flex items-center gap-2 text-xl sm:text-2xl font-bold text-white tracking-tight break-words"
+            id={slug || undefined}
+            className="group mt-8 mb-3 flex items-center gap-2 text-xl sm:text-2xl font-bold text-white tracking-tight break-words scroll-mt-24"
           >
             <span className="text-indigo-400 font-mono text-base select-none">##</span>
-            <span>{text}</span>
+            <span className="flex-1">{text}</span>
+            {slug && (
+              <a
+                href={`#${slug}`}
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 text-xs hover:text-indigo-400 ml-2"
+                aria-label="Link to section"
+              >
+                #
+              </a>
+            )}
           </h3>
         );
       }
       return (
         <h4
-          id={slug}
-          className="mt-6 mb-2 text-base sm:text-lg font-semibold text-zinc-200 tracking-wide break-words"
+          id={slug || undefined}
+          className="group mt-6 mb-2 flex items-center gap-2 text-base sm:text-lg font-semibold text-zinc-200 tracking-wide break-words scroll-mt-24"
         >
-          {text}
+          <span className="text-purple-400 font-mono text-sm select-none">###</span>
+          <span className="flex-1">{text}</span>
+          {slug && (
+            <a
+              href={`#${slug}`}
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 text-xs hover:text-purple-400 ml-2"
+              aria-label="Link to section"
+            >
+              #
+            </a>
+          )}
         </h4>
       );
     }

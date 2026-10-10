@@ -6,13 +6,13 @@ import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import { getProjects } from "@/api/projectApi";
 import { getAdminBlogs } from "@/api/blogApi";
 import { getContacts } from "@/api/contactApi";
-import { getAnalyticsStats } from "@/api/analyticsApi";
+import { getAnalyticsStats, getLiveUsers } from "@/api/analyticsApi";
 import { getCurrentResume } from "@/api/profile";
 import { getAdminDevVaultCategories } from "@/api/devvaultApi";
 import { Project } from "@/types/project";
 import { Blog } from "@/types/blog";
 import { Contact } from "@/types/contact";
-import { AnalyticsStats } from "@/types/analytics";
+import { AnalyticsStats, LiveUsersData } from "@/types/analytics";
 import { DevVaultCategory } from "@/types/devvault";
 
 export default function Dashboard() {
@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsStats | null>(null);
+  const [liveUsers, setLiveUsers] = useState<LiveUsersData | null>(null);
   const [resumeData, setResumeData] = useState<{
     resumeUrl?: string;
     resumeFileName?: string;
@@ -56,6 +57,9 @@ export default function Dashboard() {
         }
         if (analyticsRes.status === "fulfilled") {
           setAnalytics(analyticsRes.value || null);
+          if (analyticsRes.value?.liveUsers) {
+            setLiveUsers(analyticsRes.value.liveUsers);
+          }
         }
         if (resumeRes.status === "fulfilled") {
           setResumeData(resumeRes.value || null);
@@ -71,6 +75,22 @@ export default function Dashboard() {
     };
 
     fetchAllDashboardData();
+  }, [isAuthenticated]);
+
+  // Live polling for online presence counter
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const live = await getLiveUsers();
+        setLiveUsers(live);
+      } catch {
+        // Non-blocking
+      }
+    }, 12000);
+
+    return () => clearInterval(interval);
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
@@ -92,9 +112,12 @@ export default function Dashboard() {
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
               Dashboard Overview
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Live & Operational
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400"
+              title="Real-time live presence"
+            >
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              {liveUsers ? `${liveUsers.totalOnline} Online (${liveUsers.visitorsOnline} visitors • ${liveUsers.adminsOnline} admin)` : "Live & Operational"}
             </span>
           </div>
           <p className="mt-2 text-sm sm:text-base text-zinc-400">
@@ -116,7 +139,27 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Stats Metric Row */}
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {/* Metric: Online Right Now */}
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 backdrop-blur-md">
+          <div className="flex items-center justify-between text-xs font-semibold text-emerald-400 uppercase tracking-wider">
+            <span>Online Right Now</span>
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+          </div>
+          <div className="mt-3 flex items-baseline gap-2 text-3xl font-extrabold text-white">
+            <span>{loading ? "..." : (liveUsers?.totalOnline ?? 1)}</span>
+            <span className="text-xs font-mono font-medium text-emerald-400">active</span>
+          </div>
+          <p className="mt-1 text-xs text-zinc-400">
+            {liveUsers
+              ? `${liveUsers.visitorsOnline} visitors • ${liveUsers.adminsOnline} admin (you)`
+              : "Counting active users..."}
+          </p>
+        </div>
+
         {/* Metric 1: Visitors */}
         <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 backdrop-blur-md">
           <div className="flex items-center justify-between text-xs font-semibold text-zinc-400 uppercase tracking-wider">

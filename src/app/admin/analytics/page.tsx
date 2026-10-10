@@ -6,10 +6,12 @@ import {
   getAnalyticsStats,
   getTopPages,
   getTopProjects,
+  getLiveUsers,
 } from "@/api/analyticsApi";
 import { getProjects } from "@/api/projectApi";
 import {
   AnalyticsStats,
+  LiveUsersData,
   PageView,
   ProjectClick,
 } from "@/types/analytics";
@@ -27,6 +29,8 @@ export default function AnalyticsPage() {
   const isAuthenticated = useProtectedRoute();
   const [stats, setStats] =
     useState<AnalyticsStats | null>(null);
+  const [liveUsers, setLiveUsers] =
+    useState<LiveUsersData | null>(null);
   const [topPages, setTopPages] = useState<
     PageView[]
   >([]);
@@ -44,6 +48,9 @@ export default function AnalyticsPage() {
         const statsData =
           await getAnalyticsStats();
         setStats(statsData);
+        if (statsData.liveUsers) {
+          setLiveUsers(statsData.liveUsers);
+        }
 
         const pagesData =
           await getTopPages();
@@ -68,6 +75,22 @@ export default function AnalyticsPage() {
 
     fetchData();
   }, []);
+
+  // Live polling for real-time online presence counter
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const live = await getLiveUsers();
+        setLiveUsers(live);
+      } catch {
+        // Non-blocking background error
+      }
+    }, 12000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   // Helper function to get project name by ID
   const getProjectName = (projectId: string): string => {
@@ -128,7 +151,33 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {/* Metric: Live Online Presence */}
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-6 relative overflow-hidden backdrop-blur-md">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-emerald-400">
+              Online Right Now
+            </p>
+            <span className="flex h-2.5 w-2.5 relative" title="Real-time live presence">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+          </div>
+
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold text-white">
+              {liveUsers ? liveUsers.totalOnline : 1}
+            </span>
+            <span className="text-xs font-mono font-medium text-emerald-400">active</span>
+          </div>
+
+          <p className="mt-1 text-xs text-zinc-400">
+            {liveUsers
+              ? `${liveUsers.visitorsOnline} visitors • ${liveUsers.adminsOnline} admin (you)`
+              : "Counting active users..."}
+          </p>
+        </div>
+
         <div className="rounded-xl border border-zinc-800 p-6">
           <p className="text-sm text-zinc-400">
             Total Visitors

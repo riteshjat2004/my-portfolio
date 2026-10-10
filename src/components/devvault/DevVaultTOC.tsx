@@ -33,10 +33,13 @@ export default function DevVaultTOC({ blocks, variant = "all" }: DevVaultTOCProp
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, "");
 
+        const numLevel = Number(d.level);
+        const level = numLevel === 3 ? 3 : numLevel === 4 ? 4 : 2;
+
         toc.push({
           id: slug,
           text,
-          level: d.level || 2,
+          level,
         });
       }
     }
@@ -114,7 +117,11 @@ export default function DevVaultTOC({ blocks, variant = "all" }: DevVaultTOCProp
                   href={`#${item.id}`}
                   onClick={(e) => scrollToSection(e, item.id)}
                   className={`block py-1 transition-colors ${
-                    item.level === 3 ? "pl-4 text-zinc-400" : "font-semibold text-zinc-200"
+                    item.level === 4
+                      ? "pl-7 text-zinc-500 text-[11px]"
+                      : item.level === 3
+                      ? "pl-4 text-zinc-400"
+                      : "font-semibold text-zinc-200"
                   } ${
                     activeId === item.id
                       ? "text-cyan-400 font-bold"
@@ -140,20 +147,26 @@ export default function DevVaultTOC({ blocks, variant = "all" }: DevVaultTOCProp
           <nav className="space-y-1 text-xs max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-800">
             {items.map((item) => {
               const isActive = activeId === item.id;
+              const indentClass =
+                item.level === 4
+                  ? "pl-8 text-[11px] text-zinc-500"
+                  : item.level === 3
+                  ? "pl-5 text-xs text-zinc-400"
+                  : "pl-2 font-medium text-zinc-300";
+
               return (
                 <a
                   key={item.id}
                   href={`#${item.id}`}
                   onClick={(e) => scrollToSection(e, item.id)}
-                  className={`group flex items-center py-1.5 transition-all duration-200 ${
-                    item.level === 3 ? "pl-5 text-xs" : "pl-2 font-medium"
-                  } ${
+                  title={item.text}
+                  className={`group flex items-start py-1.5 transition-all duration-200 ${indentClass} ${
                     isActive
                       ? "text-cyan-400 font-bold border-l-2 border-cyan-400 pl-3 bg-cyan-950/20 rounded-r-lg"
-                      : "text-zinc-400 hover:text-zinc-200 hover:translate-x-0.5"
+                      : "hover:text-zinc-200 hover:translate-x-0.5"
                   }`}
                 >
-                  <span className="truncate">{item.text}</span>
+                  <span className="leading-snug break-words">{item.text}</span>
                 </a>
               );
             })}

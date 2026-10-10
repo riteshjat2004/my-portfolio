@@ -150,7 +150,7 @@ export default async function DevVaultTopicPage({ params }: PageProps) {
       <DevVaultReadingProgress />
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-7xl w-full px-4 sm:px-8 lg:px-12 py-10">
+      <main className="flex-1 mx-auto max-w-[1536px] w-full px-4 sm:px-8 lg:px-12 py-10">
         {/* Breadcrumbs Navigation */}
         <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500">
           <Link href="/devvault" className="text-zinc-400 hover:text-cyan-400 transition">
@@ -171,9 +171,9 @@ export default async function DevVaultTopicPage({ params }: PageProps) {
         </nav>
 
         {/* Main Reading Container: Content + Sidebar Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_320px] gap-8 xl:gap-12">
           {/* Main Article Content Column */}
-          <article className="lg:col-span-10 space-y-8">
+          <article className="min-w-0 space-y-8">
             {/* Header Metadata & Title */}
             <header className="space-y-5 border-b border-zinc-800/80 pb-8">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -324,7 +324,7 @@ export default async function DevVaultTopicPage({ params }: PageProps) {
           </article>
 
           {/* Desktop Sticky Table of Contents Sidebar */}
-          <div className="hidden lg:block lg:col-span-2 pl-4 border-l border-zinc-900">
+          <div className="hidden lg:block pl-6 border-l border-zinc-900/80">
             <DevVaultTOC blocks={content.content} variant="desktop" />
           </div>
         </div>

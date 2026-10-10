@@ -13,6 +13,13 @@ export interface ProjectClick {
   clicks: number;
 }
 
+export interface LiveUsersData {
+  totalOnline: number;
+  visitorsOnline: number;
+  adminsOnline: number;
+  lastUpdated?: string;
+}
+
 export interface AnalyticsStats {
   _id: string;
   totalVisitors: number;
@@ -23,6 +30,7 @@ export interface AnalyticsStats {
   dailyVisitors: DailyVisitor[];
   pageViews: Record<string, number>;
   projectClicks: Record<string, number>;
+  liveUsers?: LiveUsersData;
   createdAt: string;
   updatedAt: string;
 }

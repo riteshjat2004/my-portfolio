@@ -228,24 +228,32 @@ function RenderBlockSpecificInputs({
 }) {
   switch (block.type) {
     case "heading": {
-      const data = block.data as HeadingBlockData;
+      const data = (block.data || {}) as HeadingBlockData;
+      const currentLevel = Number(data.level) === 3 ? 3 : Number(data.level) === 4 ? 4 : 2;
+
       return (
         <div className="space-y-3">
-          <div className="flex gap-2">
-            {[2, 3, 4].map((lvl) => (
-              <button
-                key={lvl}
-                type="button"
-                onClick={() => updateData({ level: lvl })}
-                className={`rounded-xl px-3 py-1.5 text-xs font-mono font-bold transition ${
-                  data.level === lvl
-                    ? "bg-cyan-400 text-black shadow-md shadow-cyan-400/20"
-                    : "border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white"
-                }`}
-              >
-                H{lvl}
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-mono text-zinc-500 font-medium">Heading Size:</span>
+            <div className="flex gap-2">
+              {([2, 3, 4] as const).map((lvl) => {
+                const isActive = currentLevel === lvl;
+                return (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => updateData({ level: lvl })}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-mono font-bold transition cursor-pointer ${
+                      isActive
+                        ? "bg-cyan-400 text-black shadow-md shadow-cyan-400/20"
+                        : "border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white hover:border-zinc-700"
+                    }`}
+                  >
+                    H{lvl} {lvl === 2 ? "(Main Section)" : lvl === 3 ? "(Subsection)" : "(Sub-topic)"}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <input
             type="text"

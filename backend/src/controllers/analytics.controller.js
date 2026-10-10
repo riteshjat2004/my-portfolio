@@ -1,6 +1,40 @@
+import jwt from "jsonwebtoken";
 import Analytics from "../models/Analytics.model.js";
 import VisitorSession from "../models/VisitorSession.model.js";
 import { sendError } from "../utils/errorHandler.js";
+
+// In-Memory Live Presence Tracker (45 seconds timeout)
+// Key: visitorId -> { lastSeen: timestamp, isAdmin: boolean }
+const activePresences = new Map();
+const PRESENCE_TTL_MS = 45 * 1000;
+
+// Helper to sweep expired presences and calculate current live stats
+const calculateLiveUsers = () => {
+  const now = Date.now();
+  let totalOnline = 0;
+  let visitorsOnline = 0;
+  let adminsOnline = 0;
+
+  for (const [id, presence] of activePresences.entries()) {
+    if (now - presence.lastSeen > PRESENCE_TTL_MS) {
+      activePresences.delete(id);
+    } else {
+      totalOnline++;
+      if (presence.isAdmin) {
+        adminsOnline++;
+      } else {
+        visitorsOnline++;
+      }
+    }
+  }
+
+  return {
+    totalOnline,
+    visitorsOnline,
+    adminsOnline,
+    lastUpdated: new Date().toISOString(),
+  };
+};
 
 // Helper function to get today's date in YYYY-MM-DD format
 const getTodayDate = () => {
@@ -41,9 +75,83 @@ export const getStats = async (req, res) => {
       stats = await Analytics.create({});
     }
 
-    res.json(stats);
+    const liveUsers = calculateLiveUsers();
+    const statsObj = stats.toObject ? stats.toObject() : { ...stats };
+    statsObj.liveUsers = liveUsers;
+
+    res.json(statsObj);
   } catch (error) {
     sendError(res, error, "Failed to retrieve analytics stats");
+  }
+};
+
+export const getLiveUsers = (req, res) => {
+  try {
+    const liveStats = calculateLiveUsers();
+    res.json(liveStats);
+  } catch (error) {
+    sendError(res, error, "Failed to retrieve live online users");
+  }
+};
+
+export const trackHeartbeat = (req, res) => {
+  try {
+    const userAgent = req.headers["user-agent"] || "";
+    if (isBot(userAgent)) {
+      return res.json({ success: true, ignored: true });
+    }
+
+    const { visitorId, isLeaving } = req.body || {};
+
+    if (!visitorId || typeof visitorId !== "string" || visitorId.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid visitorId is required",
+      });
+    }
+
+    const sanitizedVisitorId = visitorId.replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!sanitizedVisitorId) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid visitorId format",
+      });
+    }
+
+    // Immediate drop on tab/window unload beacon
+    if (isLeaving) {
+      activePresences.delete(sanitizedVisitorId);
+      return res.json({ success: true, left: true });
+    }
+
+    // Determine if session is an authenticated admin/owner
+    let isAdmin = Boolean(
+      req.cookies?.ownerToken && req.cookies.ownerToken === process.env.OWNER_SECRET
+    );
+
+    if (!isAdmin && req.headers.authorization) {
+      try {
+        const authHeader = req.headers.authorization;
+        const token = authHeader.startsWith("Bearer ")
+          ? authHeader.split(" ")[1]
+          : null;
+        if (token && process.env.JWT_SECRET) {
+          jwt.verify(token, process.env.JWT_SECRET);
+          isAdmin = true;
+        }
+      } catch {
+        isAdmin = false;
+      }
+    }
+
+    activePresences.set(sanitizedVisitorId, {
+      lastSeen: Date.now(),
+      isAdmin,
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    sendError(res, error, "Failed to record heartbeat");
   }
 };
 

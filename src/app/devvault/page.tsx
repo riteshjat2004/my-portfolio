@@ -38,7 +38,7 @@ async function getHomeFeed(): Promise<DevVaultHomeFeedResponse> {
   try {
     const res = await fetch(`${apiUrl}/devvault/home-feed`, {
       next: { revalidate: 60 },
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(8000),
     });
 
     if (res.ok) {
